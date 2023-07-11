@@ -2,6 +2,7 @@
 #define _SCREENTEST_H
 
 #include <light.h>
+#include <rend.h>
 
 #include <stdint.h>
 
