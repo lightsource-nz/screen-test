@@ -8,4 +8,6 @@ add_subdirectory(${LIGHT_PATH}/ light_framework)
 
 # modules
 add_subdirectory(module/rend)
+add_subdirectory(module/light_display)
+add_subdirectory(module/light_display_po13)
 add_subdirectory(module/screentest_main)

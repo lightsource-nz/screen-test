@@ -15,8 +15,10 @@ target_sources(
 
 target_link_libraries(
         screentest_main PUBLIC
-        light_framework
+        light_display
+        light_display_po13
         rend
+        light_framework
 )
 
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)

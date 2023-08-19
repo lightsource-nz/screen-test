@@ -27,8 +27,22 @@
                 "long": "Trace logging messages enabled",
                 "buildType": "Debug",
                 "settings": {
-                    "PICO_PLATFORM": "host",
-                    "LIGHT_RUN_MODE": "TRACE"
+                    "LIGHT_RUN_MODE": "TRACE",
+                    "LIGHT_SYSTEM": "PICO_SDK",
+                    "LIGHT_PLATFORM": "HOST",
+                    "REND_DEBUG_API_TRACE": "1"
+                }
+            },
+            "pixel-trace-host": {
+                "short": "Pixel Trace - Host",
+                "long": "Rend pixel tracing enabled",
+                "buildType": "Debug",
+                "settings": {
+                    "LIGHT_RUN_MODE": "TRACE",
+                    "LIGHT_SYSTEM": "PICO_SDK",
+                    "LIGHT_PLATFORM": "HOST",
+                    "REND_DEBUG_API_TRACE": "1",
+                    "REND_DEBUG_PIXEL_TRACE": "1"
                 }
             },
             "release": {
@@ -36,8 +50,9 @@
                 "long": "Optimize for speed- exclude debug information",
                 "buildType": "Release",
                 "settings": {
-                    "PICO_PLATFORM": "rp2040",
-                    "LIGHT_RUN_MODE": "PRODUCTION"
+                    "LIGHT_RUN_MODE": "PRODUCTION",
+                    "LIGHT_SYSTEM": "PICO_SDK",
+                    "LIGHT_PLATFORM": "TARGET"
                 }
             }
         }
