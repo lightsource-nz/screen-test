@@ -15,18 +15,19 @@
 #define PORT_SPI_2                      5
 
 #define SH1107_IO_I2C                   0
-#define SH1107_IO_SPI                   1
+#define SH1107_IO_SPI_4P                1
+#define SH1107_IO_SPI_3P                2
 
 #define PO13_WIDTH                      128
 #define PO13_HEIGHT                     64
 #define PO13_BPP                        1
 
 struct i2c_state {
-        uint8_t pin_sck;
+        uint8_t pin_scl;
         uint8_t pin_sda;
 };
 struct spi_state {
-        uint8_t pin_sclk;
+        uint8_t pin_sck;
         uint8_t pin_cs;
         uint8_t pin_dc;
         uint8_t pin_miso;
@@ -39,14 +40,17 @@ struct sh1107_io_context {
                 struct i2c_state i2c;
                 struct spi_state spi;
         } io;
+        uint8_t pin_reset;
 };
 
 extern struct display_driver *light_display_driver_sh1107();
 
 extern struct sh1107_io_context *light_display_sh1107_setup_io_i2c(
-                        uint8_t port_id, uint8_t pin_sck, uint8_t pin_sda);
-extern struct sh1107_io_context *light_display_sh1107_setup_io_spi(
-                        uint8_t port_id, uint8_t pin_sclk, uint8_t pin_cs, uint8_t pin_dc, uint8_t pin_miso, uint8_t pin_mosi);
+                        uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs, uint8_t pin_scl, uint8_t pin_sda);
+extern struct sh1107_io_context *light_display_sh1107_setup_io_spi_4p(
+                        uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs, uint8_t pin_sck, uint8_t pin_dc, uint8_t pin_mosi);
+extern struct sh1107_io_context *light_display_sh1107_setup_io_spi_3p(
+                        uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs, uint8_t pin_sck, uint8_t pin_mosi);
 
 extern struct display_device *light_display_po13_create_device(uint8_t *name, struct sh1107_io_context *io);
 extern struct display_device *light_display_sh1107_create_device(

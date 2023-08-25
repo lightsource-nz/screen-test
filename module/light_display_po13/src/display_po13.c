@@ -43,31 +43,47 @@ static void _sh1107_update(struct display_device *dev)
 //      for now we just hard-code mappings for RP2040 targets.
 //      TODO add a decoupling layer to support other targets
 struct sh1107_io_context *light_display_sh1107_setup_io_i2c(
-                uint8_t port_id, uint8_t pin_sck, uint8_t pin_sda)
+                uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs, uint8_t pin_scl, uint8_t pin_sda)
 {
         // ASSERT  _port_is_i2c(port_id)
         struct sh1107_io_context *io = light_alloc(sizeof(*io));
         io->io_type = SH1107_IO_I2C;
         io->port_id = port_id;
-        io->io.i2c.pin_sck = pin_sck;
+        io->io.i2c.pin_scl = pin_scl;
         io->io.i2c.pin_sda = pin_sda;
+
+        _platform_sh1107_i2c_port_init(port_id, pin_reset, pin_cs, pin_scl, pin_sda);
         return io;
 }
-struct sh1107_io_context *light_display_sh1107_setup_io_spi(
-                uint8_t port_id, uint8_t pin_sclk, uint8_t pin_cs, uint8_t pin_dc, uint8_t pin_miso, uint8_t pin_mosi)
+struct sh1107_io_context *light_display_sh1107_setup_io_spi_4p(
+                        uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs,
+                        uint8_t pin_sck, uint8_t pin_dc, uint8_t pin_mosi)
 {
         // ASSERT  _port_is_spi(port_id)
         struct sh1107_io_context *io = light_alloc(sizeof(*io));
-        io->io_type = SH1107_IO_SPI;
+        io->io_type = SH1107_IO_SPI_4P;
         io->port_id = port_id;
-        io->io.spi.pin_sclk = pin_sclk;
+        io->io.spi.pin_sck = pin_sck;
         io->io.spi.pin_cs = pin_cs;
         io->io.spi.pin_dc = pin_dc;
-        io->io.spi.pin_miso = pin_miso;
         io->io.spi.pin_mosi = pin_mosi;
+        _platform_sh1107_spi4_port_init(port_id, pin_reset, pin_cs, pin_dc, pin_sck, pin_mosi);
         return io;
 }
-
+struct sh1107_io_context *light_display_sh1107_setup_io_spi_3p(
+                                uint8_t port_id, uint8_t pin_reset,
+                                uint8_t pin_cs, uint8_t pin_sck, uint8_t pin_mosi)
+{
+        // ASSERT  _port_is_spi(port_id)
+        struct sh1107_io_context *io = light_alloc(sizeof(*io));
+        io->io_type = SH1107_IO_SPI_3P;
+        io->port_id = port_id;
+        io->io.spi.pin_sck = pin_sck;
+        io->io.spi.pin_cs = pin_cs;
+        io->io.spi.pin_mosi = pin_mosi;
+        _platform_sh1107_spi3_port_init(port_id, pin_reset, pin_cs, pin_sck, pin_mosi);
+        return io;
+}
 struct display_device *light_display_po13_create_device(uint8_t *name, struct sh1107_io_context *io)
 {
         return light_display_sh1107_create_device(name, PO13_WIDTH, PO13_HEIGHT, PO13_BPP, io);
