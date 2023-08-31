@@ -24,8 +24,8 @@ void screentest_event(const struct light_module *module, uint8_t event)
 {
         switch(event) {
                 case LF_EVENT_LOAD:;
-                        struct display_driver *driver = light_display_driver_sh1107();
-                        display = light_display_create_device(driver, "screentest_display_main", 128, 64, 1); 
+                        struct sh1107_io_context *io = light_display_po13_setup_io_spi_4p(PORT_SPI_1);
+                        display = light_display_po13_create_device("screentest_display_main", io); 
                         struct rend_context *render = rend_context_create("screentest_render_main", 128, 64, 1);
                         light_display_set_render_context(display, render);
                         light_info("display pipeline setup complete","");

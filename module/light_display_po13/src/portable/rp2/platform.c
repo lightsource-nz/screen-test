@@ -5,6 +5,7 @@
 
 #include "../../light_display_po13_internal.h"
 
+#include <pico/time.h>
 #include <hardware/i2c.h>
 #include <hardware/spi.h>
 #include <hardware/gpio.h>
@@ -38,60 +39,95 @@ static spi_inst_t *_spi_select(uint8_t port_id)
         }
 }
 
-void _platform_sh1107_i2c_port_init(
-                                uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs,
-                                uint8_t pin_scl, uint8_t pin_sda)
+void _platform_sh1107_i2c_port_init(struct sh1107_io_context *io)
 {
         i2c_inst_t *port;
-        if(!(port = _i2c_select(port_id))) {
-                light_warn("failed: port id 0x%x is not a valid i2c port", port_id);
+        if(!(port = _i2c_select(io->port_id))) {
+                light_warn("failed: port id 0x%x is not a valid i2c port", io->port_id);
                 return;
         }
-        gpio_set_function(pin_scl, GPIO_FUNC_I2C);
-        gpio_set_function(pin_sda, GPIO_FUNC_I2C);
-        gpio_set_function(pin_reset, GPIO_FUNC_SIO);
-        gpio_set_dir(pin_reset, true);
-        gpio_set_function(pin_cs, GPIO_FUNC_SIO);
-        gpio_set_dir(pin_cs, true);
+        gpio_set_function(io->io.i2c.pin_scl, GPIO_FUNC_I2C);
+        gpio_set_function(io->io.i2c.pin_sda, GPIO_FUNC_I2C);
+        gpio_set_function(io->pin_reset, GPIO_FUNC_SIO);
+        gpio_set_dir(io->pin_reset, true);
         uint rate = i2c_init(port, I2C_BAUDRATE);
-        light_debug("i2c port id 0x%x opened with baud rate %d", port_id, rate);
+        light_debug("i2c port id 0x%x opened with baud rate %d", io->port_id, rate);
 }
 
-void _platform_sh1107_spi3_port_init(
-                                uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs,
-                                uint8_t pin_sck, uint8_t pin_mosi)
+void _platform_sh1107_spi3_port_init(struct sh1107_io_context *io)
 {
         spi_inst_t *port;
-        if(!(port = _spi_select(port_id))) {
-                light_warn("failed: port id 0x%x is not a valid spi port", port_id);
+        if(!(port = _spi_select(io->port_id))) {
+                light_warn("failed: port id 0x%x is not a valid spi port", io->port_id);
                 return;
         }
-        gpio_set_function(pin_sck, GPIO_FUNC_SPI);
-        gpio_set_function(pin_mosi, GPIO_FUNC_SPI);
-        gpio_set_function(pin_reset, GPIO_FUNC_SIO);
-        gpio_set_dir(pin_reset, true);
-        gpio_set_function(pin_cs, GPIO_FUNC_SIO);
-        gpio_set_dir(pin_cs, true);
+        gpio_set_function(io->io.spi.pin_sck, GPIO_FUNC_SPI);
+        gpio_set_function(io->io.spi.pin_mosi, GPIO_FUNC_SPI);
+        gpio_set_function(io->pin_reset, GPIO_FUNC_SIO);
+        gpio_set_dir(io->pin_reset, true);
+        gpio_set_function(io->io.spi.pin_cs, GPIO_FUNC_SIO);
+        gpio_set_dir(io->io.spi.pin_cs, true);
         uint rate = spi_init(port, SPI_BAUDRATE);
-        light_debug("spi port id 0x%x opened with baud rate %d", port_id, rate);
+        light_debug("spi port id 0x%x opened with baud rate %d", io->port_id, rate);
 }
-void _platform_sh1107_spi4_port_init(
-                                uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs, 
-                                uint8_t pin_dc, uint8_t pin_sck, uint8_t pin_mosi)
+void _platform_sh1107_spi4_port_init(struct sh1107_io_context *io)
 {
         spi_inst_t *port;
-        if(!(port = _spi_select(port_id))) {
-                light_warn("failed: port id 0x%x is not a valid spi port", port_id);
+        if(!(port = _spi_select(io->port_id))) {
+                light_warn("failed: port id 0x%x is not a valid spi port", io->port_id);
                 return;
         }
-        gpio_set_function(pin_sck, GPIO_FUNC_SPI);
-        gpio_set_function(pin_mosi, GPIO_FUNC_SPI);
-        gpio_set_function(pin_reset, GPIO_FUNC_SIO);
-        gpio_set_dir(pin_reset, true);
-        gpio_set_function(pin_cs, GPIO_FUNC_SIO);
-        gpio_set_dir(pin_cs, true);
-        gpio_set_function(pin_dc, GPIO_FUNC_SIO);
-        gpio_set_dir(pin_dc, true);
+        gpio_set_function(io->io.spi.pin_sck, GPIO_FUNC_SPI);
+        gpio_set_function(io->io.spi.pin_mosi, GPIO_FUNC_SPI);
+        gpio_set_function(io->pin_reset, GPIO_FUNC_SIO);
+        gpio_set_dir(io->pin_reset, true);
+        gpio_set_function(io->io.spi.pin_cs, GPIO_FUNC_SIO);
+        gpio_set_dir(io->io.spi.pin_cs, true);
+        gpio_set_function(io->io.spi.pin_dc, GPIO_FUNC_SIO);
+        gpio_set_dir(io->io.spi.pin_dc, true);
         uint rate = spi_init(port, SPI_BAUDRATE);
-        light_debug("spi port id 0x%x opened with baud rate %d", port_id, rate);
+        light_debug("spi port id 0x%x opened with baud rate %d", io->port_id, rate);
+}
+
+void _platform_sh1107_signal_reset(struct sh1107_io_context *io)
+{
+        gpio_put(io->pin_reset, true);
+        sleep_ms(100);
+        gpio_put(io->pin_reset, false);
+        sleep_ms(100);
+        gpio_put(io->pin_reset, true);
+        sleep_ms(100);
+}
+
+void _platform_sh1107_i2c_send_command_byte(struct sh1107_io_context *io, uint8_t cmd)
+{
+
+}
+void _platform_sh1107_i2c_send_data_byte(struct sh1107_io_context *io, uint8_t data)
+{
+
+}
+void _platform_sh1107_spi3_send_command_byte(struct sh1107_io_context *io, uint8_t cmd)
+{
+
+}
+void _platform_sh1107_spi3_send_data_byte(struct sh1107_io_context *io, uint8_t data)
+{
+        
+}
+void _platform_sh1107_spi4_send_command_byte(struct sh1107_io_context *io, uint8_t cmd)
+{
+        gpio_put(io->io.spi.pin_dc,false);
+        gpio_put(io->io.spi.pin_cs,false);
+
+        spi_write_blocking(_spi_select(io->port_id), &cmd, 1);
+        gpio_put(io->io.spi.pin_cs,true);
+}
+void _platform_sh1107_spi4_send_data_byte(struct sh1107_io_context *io, uint8_t data)
+{
+        gpio_put(io->io.spi.pin_dc,true);
+        gpio_put(io->io.spi.pin_cs,false);
+
+        spi_write_blocking(_spi_select(io->port_id), &data, 1);
+        gpio_put(io->io.spi.pin_cs,true);
 }
