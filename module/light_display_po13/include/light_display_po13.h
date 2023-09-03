@@ -73,8 +73,8 @@
 #define SH1107_IO_SPI_4P                1
 #define SH1107_IO_SPI_3P                2
 
-#define PO13_WIDTH                      128
-#define PO13_HEIGHT                     64
+#define PO13_WIDTH                      64
+#define PO13_HEIGHT                     128
 #define PO13_BPP                        1
 
 #define PO13_PIN_RESET                  12

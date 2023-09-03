@@ -16,6 +16,7 @@ static void _sh1107_clear(struct display_device *dev, uint8_t value);
 static void _sh1107_update(struct display_device *dev);
 
 static struct display_driver _driver_sh1107 = {
+        .name = "display.driver:sh1107",
         .spawn_context = _sh1107_spawn_context,
         .init_device = _sh1107_init,
         .reset = _sh1107_reset,
@@ -31,6 +32,7 @@ struct display_driver *light_display_driver_sh1107()
 static struct display_driver_context *_sh1107_spawn_context()
 {
         struct display_driver_context *ctx = light_alloc(sizeof(struct display_driver_context));
+        ctx->driver = light_display_driver_sh1107();
         ctx->state = light_alloc(sizeof(struct sh1107_state));
         return ctx;
 }
@@ -53,28 +55,28 @@ static void _sh1107_clear(struct display_device *dev, uint8_t value)
 {
         // ASSERT dev->driver_ctx->driver === &_driver_sh1107
         struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
-        switch(state->addrmode) {
-                case SH1107_ADDRMODE_VERTICAL:
-                light_display_sh1107_command_set_column_addr(dev, 0);
-                for(uint16_t page = 0; page < state->n_pages; page++) {
-                        light_display_sh1107_command_set_page_addr(dev, page);
-                        for(uint16_t col = 0; col < state->n_columns; col++) {
-                                light_display_sh1107_write_data(dev, value);
-                        }
-                }
-                case SH1107_ADDRMODE_PAGE:
-                light_display_sh1107_command_set_page_addr(dev, 0);
-                for(uint16_t col = 0; col < state->n_columns; col++) {
-                        light_display_sh1107_command_set_column_addr(dev, col);
-                        for(uint16_t page = 0; page < state->n_pages; page++) {
-                                light_display_sh1107_write_data(dev, value);
-                        }
+        light_display_sh1107_command_set_page_addr(dev, 0);
+        for(uint16_t column = 0; column < state->n_columns; column++) {
+                light_display_sh1107_command_set_column_addr(dev, column);
+                for(uint16_t page = 0; page < state->n_columns; page++) {
+                        light_display_sh1107_write_data(dev, value);
                 }
         }
 }
 static void _sh1107_update(struct display_device *dev)
 {
         // ASSERT dev->driver_ctx->driver === &_driver_sh1107
+        struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
+
+        // write out each column page by page, starting with column 0.
+        // page address increments automatically, and wraps at the end of each column
+        light_display_sh1107_command_set_page_addr(dev, 0);
+        for(uint16_t column = 0; column < state->n_columns; column++) {
+                light_display_sh1107_command_set_column_addr(dev, column);
+                for(uint16_t page = 0; page < state->n_columns; page++) {
+                        light_display_sh1107_write_data(dev, dev->render_ctx->buffer[column * state->n_pages + page]);
+                }
+        }
 
 }
 
@@ -241,9 +243,10 @@ struct display_device *light_display_po13_create_device(uint8_t *name, struct sh
 struct display_device *light_display_sh1107_create_device(uint8_t *name, uint16_t width, uint16_t height, uint8_t bpp, struct sh1107_io_context *io)
 {
         // TODO validate *io
-        struct display_device *dev = light_display_create_device(light_display_driver_sh1107(), name, width, height, bpp);
+        struct display_device *dev = light_display_create_device(light_display_driver_sh1107(), width, height, bpp);
         struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
         state->io_ctx = io;
+        light_display_add_device(dev, name);
 
         return dev;    
 }
@@ -252,7 +255,7 @@ void light_display_sh1107_command_set_column_addr(struct display_device *dev, ui
 {
         struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
         light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_COL_ADDR_LOW + (column & 0x0F));
-        light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_COL_ADDR_HIGH + (column & 0xF0));
+        light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_COL_ADDR_HIGH + (column >> 4));
 }
 void light_display_sh1107_command_set_addrmode(struct display_device *dev, uint8_t mode)
 {

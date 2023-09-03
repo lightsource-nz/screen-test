@@ -42,7 +42,7 @@ static uint8_t screentest_main(struct light_application *app)
 
         display->render_ctx->point_radius = 2;
 //        rend_draw_point(display->render_ctx, (rend_point2d) {64, 32});
-        rend_draw_circle(display->render_ctx, (rend_point2d) {64, 32}, 4, true);
+        rend_draw_circle(display->render_ctx, (rend_point2d) {64, 32}, 10, true);
         rend_debug_buffer_print_stdout(display->render_ctx);
 
         return LF_STATUS_SHUTDOWN;

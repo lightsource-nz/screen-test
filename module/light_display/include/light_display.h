@@ -50,13 +50,14 @@ extern void light_display_init();
 
 extern struct display_device_root *light_display_device_get_root();
 extern struct display_device *light_display_device_get(uint8_t *name);
-extern struct display_device *light_display_create_device(struct display_driver *driver, uint8_t *name,uint16_t width,
+extern struct display_device *light_display_create_device(struct display_driver *driver, uint16_t width,
                                                 uint16_t height, uint8_t bpp);
 extern struct display_device *light_display_init_device(
                 struct display_device *dev,
                 struct display_driver_context *driver_ctx,
-                uint8_t *name, uint16_t width, uint16_t height, uint8_t bpp);
+                uint16_t width, uint16_t height, uint8_t bpp);
 extern void light_display_set_render_context(struct display_device *dev, struct rend_context *ctx);
+extern void light_display_add_device(struct display_device *dev, uint8_t *name);
 extern void light_display_command_init(struct display_device *dev);
 extern void light_display_command_reset(struct display_device *dev);
 extern void light_display_command_update(struct display_device *dev);
