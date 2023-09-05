@@ -58,6 +58,7 @@ struct display_device *light_display_init_device(
         dev->height = height;
         dev->bpp = bpp; 
         dev->driver_ctx = driver_ctx;
+        return dev;
 }
 void light_display_set_render_context(struct display_device *dev, struct rend_context *ctx)
 {
