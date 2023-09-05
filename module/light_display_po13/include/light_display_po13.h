@@ -95,7 +95,6 @@ struct spi_state {
         uint8_t pin_sck;
         uint8_t pin_cs;
         uint8_t pin_dc;
-        uint8_t pin_miso;
         uint8_t pin_mosi;
 };
 struct sh1107_io_context {
