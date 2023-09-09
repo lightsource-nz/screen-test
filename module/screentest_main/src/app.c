@@ -45,5 +45,8 @@ static uint8_t screentest_main(struct light_application *app)
         rend_draw_circle(display->render_ctx, (rend_point2d) {64, 32}, 10, true);
         rend_debug_buffer_print_stdout(display->render_ctx);
 
+        light_display_command_clear(display, 0);
+        light_display_command_update(display);
+
         return LF_STATUS_SHUTDOWN;
 }

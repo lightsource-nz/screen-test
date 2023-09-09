@@ -122,6 +122,7 @@ struct sh1107_io_context *light_display_sh1107_setup_io_spi_4p(
         struct sh1107_io_context *io = light_alloc(sizeof(*io));
         io->io_type = SH1107_IO_SPI_4P;
         io->port_id = port_id;
+        io->pin_reset = pin_reset;
         io->io.spi.pin_sck = pin_sck;
         io->io.spi.pin_cs = pin_cs;
         io->io.spi.pin_dc = pin_dc;
@@ -146,6 +147,7 @@ struct sh1107_io_context *light_display_sh1107_setup_io_spi_3p(
 
 void light_display_sh1107_io_send_command_byte(struct sh1107_io_context *io, uint8_t cmd)
 {
+        light_debug("command: 0x%x", cmd);
         switch(io->io_type) {
         case SH1107_IO_I2C:
                 _platform_sh1107_i2c_send_command_byte(io, cmd);
@@ -162,6 +164,7 @@ void light_display_sh1107_io_send_command_byte(struct sh1107_io_context *io, uin
 }
 void light_display_sh1107_io_send_data_byte(struct sh1107_io_context *io, uint8_t data)
 {
+        light_trace ("data: 0x%x", data);
         switch(io->io_type) {
         case SH1107_IO_I2C:
                 _platform_sh1107_i2c_send_data_byte(io, data);
@@ -200,11 +203,11 @@ void light_display_sh1107_io_chip_setup(struct sh1107_io_context *io)
         light_display_sh1107_io_send_command_byte(io, 0xA8);    // 
         light_display_sh1107_io_send_command_byte(io, 0x3F);    // set multiplex ratio (1:64)
         light_display_sh1107_io_send_command_byte(io, 0xD3);    // 
-        light_display_sh1107_io_send_command_byte(io, 0x60);    // set display offset (48)
+        light_display_sh1107_io_send_command_byte(io, 0x60);    // set display offset (96)
         light_display_sh1107_io_send_command_byte(io, 0xD5);    // 
         light_display_sh1107_io_send_command_byte(io, 0x41);    // set oscillator freq ([f-5%]/2)
         light_display_sh1107_io_send_command_byte(io, 0xD9);    // 
-        light_display_sh1107_io_send_command_byte(io, 0x22);    // set pre-charge (2), dis-charge (2)
+        light_display_sh1107_io_send_command_byte(io, 0x22) ;    // set pre-charge (2), dis-charge (2)
         light_display_sh1107_io_send_command_byte(io, 0xDB);    // 
         light_display_sh1107_io_send_command_byte(io, 0x35);    // set VcomH (0.770 x Vref)
         light_display_sh1107_io_send_command_byte(io, 0xAD);    // 
@@ -229,12 +232,13 @@ void light_display_sh1107_chip_setup(struct display_device *dev)
         light_display_sh1107_command_set_scan_dir(dev, SH1107_SCAN_DIR_DOWN);   // set common scan direction (down)
         light_display_sh1107_command_set_force_on(dev, false);          // set force all pixels (disable)
         light_display_sh1107_command_set_reverse_display(dev, false);   // set reverse mode OFF
-        light_display_sh1107_command_set_multiplex_ratio(dev, 128);     // set multiplex ratio (1:64)
-        light_display_sh1107_command_set_display_offset(dev, 48);       // set display offset (48)
+        light_display_sh1107_command_set_multiplex_ratio(dev, 63);     // set multiplex ratio (1:64)
+        light_display_sh1107_command_set_display_offset(dev, 96);       // set display offset (48)
         light_display_sh1107_command_set_display_clock(dev, 4, 1);      // set oscillator freq ([f-5%]/2)
         light_display_sh1107_command_set_charge_periods(dev, 2, 2);     // set pre-charge (2), dis-charge (2)
         light_display_sh1107_command_set_vcom_deselect(dev, 0x35);      // set VcomH (0.770 x Vref)
-        light_display_sh1107_command_set_power_mode(dev, false, 0);     // set built-in DC-DC OFF
+        light_display_sh1107_command_set_power_mode(dev, false, 5);     // set built-in DC-DC OFF
+        light_display_sh1107_command_set_display_on(dev, true);         // display ON
 }
 struct display_device *light_display_po13_create_device(uint8_t *name, struct sh1107_io_context *io)
 {
@@ -299,7 +303,7 @@ void light_display_sh1107_command_set_power_mode(struct display_device *dev, boo
 {
         struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
         light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_POWER_MODE);
-        light_display_sh1107_io_send_command_byte(state->io_ctx, enable + (mode << 1));
+        light_display_sh1107_io_send_command_byte(state->io_ctx, 0x80 + enable + (mode << 1));
 }
 void light_display_sh1107_command_set_display_on(struct display_device *dev, bool enable)
 {
@@ -314,19 +318,19 @@ void light_display_sh1107_command_set_page_addr(struct display_device *dev, uint
 void light_display_sh1107_command_set_scan_dir(struct display_device *dev, uint8_t data)
 {
         struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
-        light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_REVERSE + data);
+        light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_SCAN_DIR + data);
 }
-void light_display_sh1107_command_set_display_clock(struct display_device *dev, uint8_t div, uint8_t freq)
+void light_display_sh1107_command_set_display_clock(struct display_device *dev, uint8_t freq, uint8_t div)
 {
         struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
         light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_DISPLAY_CLK);
-        light_display_sh1107_io_send_command_byte(state->io_ctx, (div & 0x0F) + (freq & 0x0F) << 4);
+        light_display_sh1107_io_send_command_byte(state->io_ctx, ((freq & 0x0F) << 4) + (div & 0x0F));
 }
 void light_display_sh1107_command_set_charge_periods(struct display_device *dev, uint8_t pre, uint8_t dis)
 {
         struct sh1107_state *state = (struct sh1107_state *) dev->driver_ctx->state;
         light_display_sh1107_io_send_command_byte(state->io_ctx, SH1107_CMD_SET_CHARGE_PERIODS);
-        light_display_sh1107_io_send_command_byte(state->io_ctx, (pre & 0x0F) + (dis & 0x0F) << 4);
+        light_display_sh1107_io_send_command_byte(state->io_ctx, (pre & 0x0F) + ((dis & 0x0F) << 4));
 }
 void light_display_sh1107_command_set_vcom_deselect(struct display_device *dev, uint8_t data)
 {
