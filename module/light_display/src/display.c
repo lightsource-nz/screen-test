@@ -56,7 +56,7 @@ struct display_device *light_display_init_device(
         dev->device_id = next_device_id++;
         dev->width = width;
         dev->height = height;
-        dev->bpp = bpp; 
+        dev->bpp = bpp;
         dev->driver_ctx = driver_ctx;
         return dev;
 }
@@ -68,12 +68,13 @@ void light_display_set_render_context(struct display_device *dev, struct rend_co
 void light_display_add_device(struct display_device *dev, uint8_t *name)
 {
         light_object_add(&dev->header, &device_root.header, "display_device:%s", name);
-        light_info("new device initialized: '%s', driver: '%s", dev->header.id, dev->driver_ctx->driver->name);
+        light_info("new device initialized: '%s', driver: '%s'", dev->header.id, dev->driver_ctx->driver->name);
 }
 void light_display_command_init(struct display_device *dev)
 {
         light_debug("device: %s", dev->header.id);
         dev->driver_ctx->driver->init_device(dev);
+        dev->driver_ctx->driver->clear(dev, 0);
 }
 void light_display_command_update(struct display_device *dev)
 {

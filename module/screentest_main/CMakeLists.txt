@@ -17,6 +17,7 @@ target_link_libraries(
         screentest_main PUBLIC
         light_display
         light_display_po13
+        light_display_sh1107
         rend
         light_framework
 )

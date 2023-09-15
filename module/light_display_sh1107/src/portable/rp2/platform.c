@@ -1,9 +1,9 @@
 // portable/rp2/platform.c
 // implementation of IO routines for RP2 series MCUs
 
-#include <light_display_po13.h>
+#include <light_display_sh1107.h>
 
-#include "../../light_display_po13_internal.h"
+#include "../../light_display_sh1107_internal.h"
 
 #include <pico/time.h>
 #include <hardware/i2c.h>
