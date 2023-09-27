@@ -1,10 +1,10 @@
 // portable/host/platform.c
 // implementation of IO routines for dev host platform
 
-#include <light_display_po13.h>
+#include <light_display_sh1107.h>
 #include <stdio.h>
 
-#include "../../light_display_po13_internal.h"
+#include "../../light_display_sh1107_internal.h"
 
 void _platform_sh1107_i2c_port_init(struct sh1107_io_context *io)
 {
