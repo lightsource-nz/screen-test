@@ -213,7 +213,7 @@ void light_display_sh1107_clear_screen(struct display_device *dev, uint8_t value
         light_display_sh1107_command_set_page_addr(dev, 0);
         for(uint16_t column = 0; column < state->n_columns; column++) {
                 light_display_sh1107_command_set_column_addr(dev, column);
-                for(uint16_t page = 0; page < state->n_columns; page++) {
+                for(uint16_t page = 0; page < state->n_pages; page++) {
                         light_display_sh1107_write_data(dev, value);
                 }
         }
