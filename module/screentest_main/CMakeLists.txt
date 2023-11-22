@@ -20,6 +20,7 @@ target_link_libraries(
         light_display_sh1107
         rend
         light_framework
+        light_platform
 )
 
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)

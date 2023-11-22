@@ -16,4 +16,6 @@
 
 #define ST_INFO_STR                     "screen-test v" CF_VERSION_STR
 
+#define ST_DISPLAY_COUNT                2
+
 #endif
