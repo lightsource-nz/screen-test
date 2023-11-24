@@ -1,6 +1,8 @@
 #include <screentest.h>
-
 #include <light_platform.h>
+#include <module/mod_light_display.h>
+#include <module/mod_light_display_sh1107.h>
+#include <module/mod_light_display_po13.h>
 
 #include "screentest_internal.h"
 
@@ -14,6 +16,7 @@ static void screentest_set_frame_rate(uint32_t frame_rate);
 Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
                                 &light_display,
+                                &light_display_sh1107,
                                 &light_display_po13,
                                 &light_platform,
                                 &light_framework);

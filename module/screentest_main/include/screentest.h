@@ -2,12 +2,9 @@
 #define _SCREENTEST_H
 
 #include <light.h>
-#include <module/mod_light_display.h>
-#include <module/mod_light_display_po13.h>
-#include <rend.h>
-
 #include <light_display.h>
 #include <light_display_po13.h>
+#include <rend.h>
 
 #include <stdint.h>
 
