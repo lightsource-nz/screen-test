@@ -33,22 +33,33 @@ void main()
 static void screentest_event(const struct light_module *module, uint8_t event)
 {
         switch(event) {
-                case LF_EVENT_LOAD:;
-                        render = rend_context_create("screentest_render_main", 128, 64, 1);
-                        render->point_radius = 2;
-                        frame_counter = 0;
-                        screentest_set_frame_rate(24);
-                        for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
-                                struct sh1107_io_context *io = light_display_po13_setup_io_spi_4p(PORT_SPI_1);
-                                struct display_device *disp = light_display_po13_create_device("screentest_display_main", io);
-                                light_display_set_render_context(disp, render);
-                                display[i] = disp;
-                        }
-                        light_info("display pipeline setup complete","");
-                break;
-                // TODO implement unregister for event hooks
-                case LF_EVENT_UNLOAD:
-                break; 
+        case LF_EVENT_LOAD:;
+                render = rend_context_create("screentest_render_main", 128, 64, 1);
+                render->point_radius = 2;
+                frame_counter = 0;
+                screentest_set_frame_rate(24);
+                struct sh1107_io_context *io_main = light_display_po13_setup_io_spi_4p(PORT_SPI_1);
+                struct display_device *disp_main = light_display_po13_create_device("screentest_display_main", io_main);
+                light_display_set_render_context(disp_main, render);
+                display[0] = disp_main;
+                struct sh1107_io_context *io_sec =
+                        light_display_sh1107_setup_io_spi_4p(
+                                PORT_SPI_0,
+                                ST_DISPLAY_1_PIN_RESET,
+                                ST_DISPLAY_1_PIN_CS,
+                                ST_DISPLAY_1_PIN_DC,
+                                ST_DISPLAY_1_PIN_SCK,
+                                ST_DISPLAY_1_PIN_TX);
+                struct display_device *display_sec =
+                        light_display_sh1107_create_device(
+                                "screentest_display_sec", 64, 128, 1, io_sec);
+                light_display_set_render_context(display_sec, render);
+                display[1] = display_sec;
+                light_info("display pipeline setup complete","");
+        break;
+        // TODO implement unregister for event hooks
+        case LF_EVENT_UNLOAD:
+        break; 
         }
 }
 static uint8_t screentest_main(struct light_application *app)
