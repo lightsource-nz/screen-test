@@ -37,12 +37,16 @@ static void screentest_event(const struct light_module *module, uint8_t event)
 {
         switch(event) {
         case LF_EVENT_LOAD:;
-                render = rend_context_create("screentest_render_main", 128, 64, 1);
+                render = rend_context_create(
+                        "screentest_render_main", 128, 64, 1);
                 render->point_radius = 2;
                 frame_counter = 0;
                 screentest_set_frame_rate(24);
-                struct sh1107_io_context *io_main = light_display_po13_setup_io_spi_4p(PORT_SPI_1);
-                struct display_device *disp_main = light_display_po13_create_device("screentest_display_main", io_main);
+                struct sh1107_io_context *io_main =
+                        light_display_po13_setup_io_spi_4p(PORT_SPI_1);
+                struct display_device *disp_main =
+                        light_display_po13_create_device(
+                                "screentest_display_main", io_main);
                 light_display_set_render_context(disp_main, render);
                 display[0] = disp_main;
                 struct sh1107_io_context *io_sec =
@@ -88,5 +92,6 @@ static uint8_t screentest_main(struct light_application *app)
 
 static void screentest_set_frame_rate(uint32_t frame_rate)
 {
-        frame_interval_ms = 1000 / frame_rate;
+        if(frame_rate > 0)
+                frame_interval_ms = 1000 / frame_rate;
 }
