@@ -1,9 +1,9 @@
 // portable/rp2/platform.c
 // implementation of IO routines for RP2 series MCUs
 
-#include <light_display_sh1107.h>
+#include <light_display_ioport.h>
 
-#include "../../light_display_sh1107_internal.h"
+#include "../../light_display_ioport_internal.h"
 
 #include <pico/time.h>
 #include <hardware/i2c.h>
@@ -39,7 +39,7 @@ static spi_inst_t *_spi_select(uint8_t port_id)
         }
 }
 
-void _platform_sh1107_i2c_port_init(struct sh1107_io_context *io)
+void _platform_i2c_port_init(struct io_context *io)
 {
         i2c_inst_t *port;
         if(!(port = _i2c_select(io->port_id))) {
@@ -54,7 +54,7 @@ void _platform_sh1107_i2c_port_init(struct sh1107_io_context *io)
         light_debug("i2c port id 0x%x opened with baud rate %d", io->port_id, rate);
 }
 
-void _platform_sh1107_spi3_port_init(struct sh1107_io_context *io)
+void _platform_spi3_port_init(struct io_context *io)
 {
         spi_inst_t *port;
         if(!(port = _spi_select(io->port_id))) {
@@ -70,7 +70,7 @@ void _platform_sh1107_spi3_port_init(struct sh1107_io_context *io)
         uint rate = spi_init(port, SPI_BAUDRATE);
         light_debug("spi port id 0x%x opened with baud rate %d", io->port_id, rate);
 }
-void _platform_sh1107_spi4_port_init(struct sh1107_io_context *io)
+void _platform_spi4_port_init(struct io_context *io)
 {
         spi_inst_t *port;
         if(!(port = _spi_select(io->port_id))) {
@@ -89,7 +89,7 @@ void _platform_sh1107_spi4_port_init(struct sh1107_io_context *io)
         light_debug("spi port id 0x%x opened with baud rate %d", io->port_id, rate);
 }
 
-void _platform_sh1107_signal_reset(struct sh1107_io_context *io)
+void _platform_signal_reset(struct io_context *io)
 {
         gpio_put(io->pin_reset, true);
         sleep_ms(100);
@@ -99,23 +99,23 @@ void _platform_sh1107_signal_reset(struct sh1107_io_context *io)
         sleep_ms(100);
 }
 
-void _platform_sh1107_i2c_send_command_byte(struct sh1107_io_context *io, uint8_t cmd)
+void _platform_i2c_send_command_byte(struct io_context *io, uint8_t cmd)
 {
 
 }
-void _platform_sh1107_i2c_send_data_byte(struct sh1107_io_context *io, uint8_t data)
+void _platform_i2c_send_data_byte(struct io_context *io, uint8_t data)
 {
 
 }
-void _platform_sh1107_spi3_send_command_byte(struct sh1107_io_context *io, uint8_t cmd)
+void _platform_spi3_send_command_byte(struct io_context *io, uint8_t cmd)
 {
 
 }
-void _platform_sh1107_spi3_send_data_byte(struct sh1107_io_context *io, uint8_t data)
+void _platform_spi3_send_data_byte(struct io_context *io, uint8_t data)
 {
         
 }
-void _platform_sh1107_spi4_send_command_byte(struct sh1107_io_context *io, uint8_t cmd)
+void _platform_spi4_send_command_byte(struct io_context *io, uint8_t cmd)
 {
         gpio_put(io->io.spi.pin_dc,false);
         gpio_put(io->io.spi.pin_cs,false);
@@ -123,7 +123,7 @@ void _platform_sh1107_spi4_send_command_byte(struct sh1107_io_context *io, uint8
         spi_write_blocking(_spi_select(io->port_id), &cmd, 1);
         gpio_put(io->io.spi.pin_cs,true);
 }
-void _platform_sh1107_spi4_send_data_byte(struct sh1107_io_context *io, uint8_t data)
+void _platform_spi4_send_data_byte(struct io_context *io, uint8_t data)
 {
         gpio_put(io->io.spi.pin_dc,true);
         gpio_put(io->io.spi.pin_cs,false);

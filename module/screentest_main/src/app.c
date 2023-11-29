@@ -42,15 +42,15 @@ static void screentest_event(const struct light_module *module, uint8_t event)
                 render->point_radius = 2;
                 frame_counter = 0;
                 screentest_set_frame_rate(24);
-                struct sh1107_io_context *io_main =
+                struct io_context *io_main =
                         light_display_po13_setup_io_spi_4p(PORT_SPI_1);
                 struct display_device *disp_main =
                         light_display_po13_create_device(
                                 "screentest_display_main", io_main);
                 light_display_set_render_context(disp_main, render);
                 display[0] = disp_main;
-                struct sh1107_io_context *io_sec =
-                        light_display_sh1107_setup_io_spi_4p(
+                struct io_context *io_sec =
+                        light_display_ioport_setup_io_spi_4p(
                                 PORT_SPI_0,
                                 ST_DISPLAY_1_PIN_RESET,
                                 ST_DISPLAY_1_PIN_CS,

@@ -60,38 +60,6 @@
 #define SH1107_CMD_NOP                  0xE3
 #define SH1107_CMD_RMW_END              0xEE
 
-#define PORT_I2C_0                      0
-#define PORT_I2C_1                      1
-#define PORT_I2C_2                      2
-
-#define PORT_SPI_0                      3
-#define PORT_SPI_1                      4
-#define PORT_SPI_2                      5
-
-#define SH1107_IO_I2C                   0
-#define SH1107_IO_SPI_4P                1
-#define SH1107_IO_SPI_3P                2
-
-struct i2c_state {
-        uint8_t pin_scl;
-        uint8_t pin_sda;
-};
-struct spi_state {
-        uint8_t pin_sck;
-        uint8_t pin_cs;
-        uint8_t pin_dc;
-        uint8_t pin_mosi;
-};
-struct sh1107_io_context {
-        uint8_t io_type;
-        uint8_t port_id;
-        union {
-                struct i2c_state i2c;
-                struct spi_state spi;
-        } io;
-        uint8_t pin_reset;
-};
-
 extern struct display_driver *light_display_driver_sh1107();
 
 extern struct sh1107_io_context *light_display_sh1107_setup_io_i2c(
@@ -100,17 +68,15 @@ extern struct sh1107_io_context *light_display_sh1107_setup_io_spi_4p(
                         uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs, uint8_t pin_dc, uint8_t pin_sck, uint8_t pin_mosi);
 extern struct sh1107_io_context *light_display_sh1107_setup_io_spi_3p(
                         uint8_t port_id, uint8_t pin_reset, uint8_t pin_cs, uint8_t pin_sck, uint8_t pin_mosi);
-// I/O functions are all blocking, for now
-extern void light_display_sh1107_io_send_command_byte(struct sh1107_io_context *io, uint8_t cmd);
-extern void light_display_sh1107_io_send_data_byte(struct sh1107_io_context *io, uint8_t data);
-extern void light_display_sh1107_io_signal_reset(struct sh1107_io_context *io);
 
 extern struct display_device *light_display_sh1107_create_device(
-        uint8_t *name, uint16_t width, uint16_t height, uint8_t bpp, struct sh1107_io_context *io);
+        uint8_t *name, uint16_t width, uint16_t height, uint8_t bpp, struct io_context *io);
 extern void light_display_sh1107_reset_device(struct display_device *dev);
 extern void light_display_sh1107_chip_setup(struct display_device *dev);
 extern void light_display_sh1107_clear_screen(struct display_device *dev, uint8_t value);
 extern void light_display_sh1107_update_screen(struct display_device *dev);
+
+// SH1107 LED driver commands
 extern void light_display_sh1107_command_set_column_addr(struct display_device *dev, uint8_t addr);
 extern void light_display_sh1107_command_set_addrmode(struct display_device *dev, uint8_t mode);
 extern void light_display_sh1107_command_set_contrast(struct display_device *dev, uint8_t level);
