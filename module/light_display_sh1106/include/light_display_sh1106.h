@@ -64,7 +64,7 @@ extern struct display_driver *light_display_driver_sh1106();
 
 // light-display API commands
 extern struct display_device *light_display_sh1106_create_device(
-        uint8_t *name, uint16_t width, uint16_t height, uint8_t bpp, struct sh1106_io_context *io);
+        uint8_t *name, uint16_t width, uint16_t height, uint8_t bpp, struct io_context *io);
 extern void light_display_sh1106_reset_device(struct display_device *dev);
 extern void light_display_sh1106_chip_setup(struct display_device *dev);
 extern void light_display_sh1106_clear_screen(struct display_device *dev, uint8_t value);

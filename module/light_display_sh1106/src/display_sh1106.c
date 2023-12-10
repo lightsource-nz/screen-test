@@ -64,7 +64,7 @@ void light_display_sh1106_reset_device(struct display_device *dev)
         light_display_ioport_signal_reset(state->io_ctx);
         state->n_pages = light_display_sh1106_y_to_pages(dev->height);
         state->n_columns = light_display_sh1106_x_to_columns(dev->width);
-        state->addrmode = SH1107_ADDRMODE_VERTICAL;
+        state->addrmode = SH1106_ADDRMODE_VERTICAL;
         state->column_address = 0xFF;
         state->page_address = 0xFF;
 }
@@ -79,7 +79,7 @@ void light_display_sh1106_chip_setup(struct display_device *dev)
         light_display_sh1106_command_set_contrast(dev, 128);            // set contrast level (128)
         light_display_sh1106_command_set_addrmode(dev, state->addrmode);       // RAM addressing mode (vertical)
         light_display_sh1106_command_set_segment_remap(dev, false);     // set segment remap OFF
-        light_display_sh1106_command_set_scan_dir(dev, SH1107_SCAN_DIR_DOWN);   // set common scan direction (down)
+        light_display_sh1106_command_set_scan_dir(dev, SH1106_SCAN_DIR_DOWN);   // set common scan direction (down)
         light_display_sh1106_command_set_force_on(dev, false);          // set force all pixels (disable)
         light_display_sh1106_command_set_reverse_display(dev, false);   // set reverse mode OFF
         light_display_sh1106_command_set_multiplex_ratio(dev, 63);     // set multiplex ratio (1:64)
@@ -132,110 +132,110 @@ void light_display_sh1106_command_set_column_addr(struct display_device *dev, ui
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
         if((state->column_address & 0xF0) != (column & 0xF0))
-                light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_COL_ADDR_HIGH + (column >> 4));
+                light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_COL_ADDR_HIGH + (column >> 4));
         if((state->column_address & 0x0F) != (column & 0x0F))
-                light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_COL_ADDR_LOW + (column & 0x0F));
+                light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_COL_ADDR_LOW + (column & 0x0F));
         state->column_address = column;
 }
 void light_display_sh1106_command_set_addrmode(struct display_device *dev, uint8_t mode)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_ADDRMODE + mode);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_ADDRMODE + mode);
 }
 void light_display_sh1106_command_set_contrast(struct display_device *dev, uint8_t level)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_CONTRAST);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_CONTRAST);
         light_display_ioport_send_command_byte(state->io_ctx, level);
 }
 void light_display_sh1106_command_set_segment_remap(struct display_device *dev, bool enable)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_SEG_REMAP + enable);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_SEG_REMAP + enable);
 }
 extern void light_display_sh1106_command_set_multiplex_ratio(struct display_device *dev, uint8_t ratio)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_MUX_RATIO);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_MUX_RATIO);
         light_display_ioport_send_command_byte(state->io_ctx, ratio);
 }
 void light_display_sh1106_command_set_force_on(struct display_device *dev, bool enable)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_FORCE_ON + enable);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_FORCE_ON + enable);
 }
 void light_display_sh1106_command_set_reverse_display(struct display_device *dev, bool enable)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_REVERSE + enable);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_REVERSE + enable);
 }
 void light_display_sh1106_command_set_display_offset(struct display_device *dev, uint8_t data)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_DISPLAY_OFFSET);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_DISPLAY_OFFSET);
         light_display_ioport_send_command_byte(state->io_ctx, data);
 }
 void light_display_sh1106_command_set_power_mode(struct display_device *dev, bool enable, uint8_t mode)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_POWER_MODE);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_POWER_MODE);
         light_display_ioport_send_command_byte(state->io_ctx, 0x80 + enable + (mode << 1));
 }
 void light_display_sh1106_command_set_display_on(struct display_device *dev, bool enable)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_DISPLAY_ON + enable);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_DISPLAY_ON + enable);
 }
 void light_display_sh1106_command_set_page_addr(struct display_device *dev, uint8_t page)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
         if(state->page_address != page)
-                light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_PAGE_ADDR + page);
+                light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_PAGE_ADDR + page);
         state->page_address = page;
 }
 void light_display_sh1106_command_set_scan_dir(struct display_device *dev, uint8_t data)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_SCAN_DIR + data);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_SCAN_DIR + data);
 }
 void light_display_sh1106_command_set_display_clock(struct display_device *dev, uint8_t freq, uint8_t div)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_DISPLAY_CLK);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_DISPLAY_CLK);
         light_display_ioport_send_command_byte(state->io_ctx, ((freq & 0x0F) << 4) + (div & 0x0F));
 }
 void light_display_sh1106_command_set_charge_periods(struct display_device *dev, uint8_t pre, uint8_t dis)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_CHARGE_PERIODS);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_CHARGE_PERIODS);
         light_display_ioport_send_command_byte(state->io_ctx, (pre & 0x0F) + ((dis & 0x0F) << 4));
 }
 void light_display_sh1106_command_set_vcom_deselect(struct display_device *dev, uint8_t data)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_VCOMH);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_VCOMH);
         light_display_ioport_send_command_byte(state->io_ctx, data);
 }
 void light_display_sh1106_command_set_start_line(struct display_device *dev, uint8_t addr)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_SET_DISPLAY_START);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_SET_DISPLAY_START);
         light_display_ioport_send_command_byte(state->io_ctx, addr);
 }
 void light_display_sh1106_command_rmw_begin(struct display_device *dev)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_RMW_BEGIN);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_RMW_BEGIN);
 }
 void light_display_sh1106_command_rmw_end(struct display_device *dev)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_RMW_END);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_RMW_END);
 }
 void light_display_sh1106_command_no_op(struct display_device *dev)
 {
         struct sh1106_state *state = (struct sh1106_state *) dev->driver_ctx->state;
-        light_display_ioport_send_command_byte(state->io_ctx, SH1107_CMD_NOP);
+        light_display_ioport_send_command_byte(state->io_ctx, SH1106_CMD_NOP);
 }
 void light_display_sh1106_write_data(struct display_device *dev, uint8_t data)
 {
@@ -245,10 +245,10 @@ void light_display_sh1106_write_data(struct display_device *dev, uint8_t data)
         // increment address counter, to track state of driver's internal counter
         switch (state->addrmode)
         {
-        case SH1107_ADDRMODE_PAGE:
+        case SH1106_ADDRMODE_PAGE:
                 state->column_address = (state->column_address + 1) % state->n_columns;
                 break;
-        case SH1107_ADDRMODE_VERTICAL:
+        case SH1106_ADDRMODE_VERTICAL:
                 state->page_address = (state->page_address + 1) % state->n_pages;
                 break;
         }
