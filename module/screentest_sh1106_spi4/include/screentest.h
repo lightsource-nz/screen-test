@@ -2,6 +2,7 @@
 #define _SCREENTEST_H
 
 #include <light.h>
+#include <light_platform.h>
 #include <light_display.h>
 #include <light_display_sh1106.h>
 
@@ -17,6 +18,7 @@
 // TODO make display count configurable at runtime
 #define ST_DISPLAY_COUNT                1
 
+#define ST_DISPLAY_0_PORT_ID            PORT_SPI_0
 #define ST_DISPLAY_0_PIN_CS             17
 #define ST_DISPLAY_0_PIN_DC             16
 #define ST_DISPLAY_0_PIN_SCK            18
