@@ -15,6 +15,7 @@ target_sources(
 
 target_link_libraries(
         screentest_po13 PUBLIC
+        screentest_common
         light_display
         light_display_po13
         light_display_sh1107
