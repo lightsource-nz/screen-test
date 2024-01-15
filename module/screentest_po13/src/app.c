@@ -14,7 +14,7 @@ void __screentest_hardware_init()
         struct display_device *disp_main =
                 light_display_po13_create_device(
                         "screentest_display_main", io_main);
-        display[0] = disp_main;
+        _display[0] = disp_main;
         struct io_context *io_sec =
                 light_display_ioport_setup_io_spi_4p(
                         PORT_SPI_0,
@@ -26,6 +26,6 @@ void __screentest_hardware_init()
         struct display_device *display_sec =
                 light_display_sh1107_create_device(
                         "screentest_display_sec", 64, 128, 1, io_sec);
-        display[1] = display_sec;
+        _display[1] = display_sec;
         light_info("display pipeline setup complete","");
 }

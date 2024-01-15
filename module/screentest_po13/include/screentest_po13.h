@@ -1,12 +1,8 @@
-#ifndef _SCREENTEST_H
-#define _SCREENTEST_H
+#ifndef _SCREENTEST_PO13_H
+#define _SCREENTEST_PO13_H
 
-#include <light.h>
-#include <light_display.h>
+#include <screentest.h>
 #include <light_display_po13.h>
-#include <rend.h>
-
-#include <stdint.h>
 
 // TODO implement version fields properly
 #define ST_VERSION_STR                  "0.1.0"

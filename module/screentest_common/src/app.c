@@ -20,8 +20,6 @@ void __screentest_hardware_init();
 Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
                                 &light_display,
-                                &light_display_sh1107,
-                                &light_display_po13,
                                 &light_platform,
                                 &light_framework);
 
@@ -46,10 +44,10 @@ static void screentest_event(const struct light_module *module, uint8_t event)
                 render->point_radius = 2;
                 frame_counter = 0;
                 screentest_set_frame_rate(24);
-                light_debug("passing control to display hardware setup function",);
-                __screntest_hardware_init();
+                light_debug("passing control to display hardware setup function","");
+                __screentest_hardware_init();
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
-                        light_display_set_render_context(display[i], render);
+                        light_display_set_render_context(_display[i], render);
                 }
                 light_info("display pipeline setup complete","");
         break;
@@ -71,7 +69,7 @@ static uint8_t screentest_main(struct light_application *app)
 //              rend_debug_buffer_print_stdout(display->render_ctx);
 
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
-                        light_display_command_update(display[i]);
+                        light_display_command_update(_display[i]);
                 }
         }
 
