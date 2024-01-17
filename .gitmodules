@@ -13,3 +13,6 @@
 [submodule "module/light_display_sh1106"]
 	path = module/light_display_sh1106
 	url = git@github.com:lightsource-nz/light_display_sh1106.git
+[submodule "module/light_display_po13"]
+	path = module/light_display_po13
+	url = git@github.com:lightsource-nz/light_display_po13.git
