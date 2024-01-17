@@ -28,6 +28,9 @@ static uint32_t next_frame;
 static uint32_t frame_interval_ms;
 static uint32_t frame_counter;
 
+static uint8_t seq_counter;
+static uint8_t seq_wrap;
+
 void main()
 {
         light_framework_init();
@@ -43,7 +46,9 @@ static void screentest_event(const struct light_module *module, uint8_t event)
                         "screentest_render_main", 128, 64, 1);
                 render->point_radius = 2;
                 frame_counter = 0;
-                screentest_set_frame_rate(24);
+                seq_counter = 0;
+                seq_wrap = 8;
+                screentest_set_frame_rate(2);
                 light_debug("passing control to display hardware setup function","");
                 __screentest_hardware_init();
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
@@ -64,8 +69,10 @@ static uint8_t screentest_main(struct light_application *app)
         if(now >= next_frame) {
                 next_frame += frame_interval_ms;
                 frame_counter++;
+                seq_counter++;
+                seq_counter %= seq_wrap;
 //              rend_draw_point(display->render_ctx, (rend_point2d) {64, 32});
-                rend_draw_circle(render, (rend_point2d) {64, 32}, 10, true);
+                rend_draw_circle(render, (rend_point2d) {64, 32}, 2 * (seq_counter + 1), true);
 //              rend_debug_buffer_print_stdout(display->render_ctx);
 
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
