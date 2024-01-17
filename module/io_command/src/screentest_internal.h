@@ -1,4 +1,0 @@
-#ifndef _CROSSFIRE_INTERNAL_H
-#define _CROSSFIRE_INTERNAL_H
-
-#endif
