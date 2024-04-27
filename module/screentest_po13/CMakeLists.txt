@@ -1,6 +1,7 @@
 
 add_executable(screentest_po13)
 
+light_set_target_board(screentest_po13 pico)
 light_framework_application_module(screentest_po13)
 
 target_include_directories(
@@ -27,3 +28,5 @@ target_link_libraries(
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)
         pico_add_extra_outputs(screentest_po13)
 endif()
+
+light_dump_common_scope_vars()
