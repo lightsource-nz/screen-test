@@ -16,3 +16,6 @@
 [submodule "module/light_display_po13"]
 	path = module/light_display_po13
 	url = git@github.com:lightsource-nz/light_display_po13.git
+[submodule "cmake/light_presets"]
+	path = cmake/light_presets
+	url = https://github.com/lightsource-nz/light_presets.git
