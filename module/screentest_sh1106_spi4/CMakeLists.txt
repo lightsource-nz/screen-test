@@ -1,8 +1,6 @@
 
 add_executable(screentest_sh1106_spi4)
 
-light_framework_application_module(screentest_sh1106_spi4)
-
 target_include_directories(
         screentest_sh1106_spi4 PUBLIC
         ${CMAKE_CURRENT_LIST_DIR}/include
@@ -18,8 +16,7 @@ target_link_libraries(
         light_display
         light_display_sh1106
         rend
-        light_framework
-        light_platform
+        light_core
 )
 
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)

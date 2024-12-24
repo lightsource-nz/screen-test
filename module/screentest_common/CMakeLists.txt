@@ -17,6 +17,5 @@ target_link_libraries(
         screentest_common PUBLIC
         light_display
         rend
-        light_framework
-        light_platform
+        light_core
 )

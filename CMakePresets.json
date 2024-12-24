@@ -1,0 +1,64 @@
+{
+    "version": 6,
+    "include": ["cmake/light_presets/light_presets.json"],
+    "configurePresets": [
+        {
+            "name": "conf-screentest-base",
+            "hidden": true,
+            "inherits": ["conf-light-pico"],
+            "binaryDir": "${sourceDir}/build",
+            "generator": "Ninja",
+            "cacheVariables": {
+            }
+        },
+        {
+            "name": "conf-screentest-host-debug",
+            "inherits": [
+                "conf-screentest-base",
+                "conf-light-pico-host"
+            ]
+        },
+        {
+            "name": "conf-screentest-debug",
+            "inherits": [
+                "conf-screentest-base",
+                "conf-light-debug"
+            ]
+        },
+        {
+            "name": "conf-screentest-trace",
+            "inherits": [
+                "conf-screentest-base",
+                "conf-light-trace"
+            ]
+        },
+        {
+            "name": "conf-screentest-release",
+            "inherits": [
+                "conf-screentest-base",
+                "conf-light-release"
+            ]
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "build-screentest-host",
+            "configurePreset": "conf-screentest-host-debug"
+        },
+        {
+            "name": "build-screentest_sh1106_spi4-debug",
+            "configurePreset": "conf-screentest-debug",
+            "targets": ["screentest_sh1106_spi4"]
+        },
+        {
+            "name": "build-screentest-trace",
+            "configurePreset": "conf-screentest-trace",
+            "targets": ["screentest"]
+        },
+        {
+            "name": "build-screentest-release",
+            "configurePreset": "conf-screentest-release",
+            "targets":["screentest"]
+        }
+    ]
+}

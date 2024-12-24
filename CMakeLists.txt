@@ -1,6 +1,18 @@
 cmake_minimum_required(VERSION 3.18)
 
-get_filename_component(LIGHT_PATH "${LIGHT_PATH}" REALPATH BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+# front-load initialisers for light and pico-sdk
+if(DEFINED ENV{LIGHT_PATH} AND (NOT LIGHT_PATH))
+    set(LIGHT_PATH "$ENV{LIGHT_PATH}")
+endif()
+if(DEFINED ENV{PICO_SDK_PATH} AND (NOT PICO_SDK_PATH))
+    set(PICO_SDK_PATH "$ENV{PICO_SDK_PATH}")
+endif()
+if(LIGHT_PATH)
+        cmake_path(IS_RELATIVE LIGHT_PATH _LIGHT_PATH_RELATIVE)
+        if(${_LIGHT_PATH_RELATIVE})
+                get_filename_component(LIGHT_PATH "${LIGHT_PATH}" REALPATH BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+        endif()
+endif()
 
 include(${LIGHT_PATH}/external/light_preinit.cmake)
 

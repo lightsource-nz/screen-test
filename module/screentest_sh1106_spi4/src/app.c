@@ -8,7 +8,7 @@
 static struct rend_context *render;
 static struct display_device *display[ST_DISPLAY_COUNT];
 
-static void screentest_event(const struct light_module *module, uint8_t event);
+static void screentest_event(const struct light_module *module, uint8_t event, void *arg);
 static uint8_t screentest_main(struct light_application *app);
 static void screentest_set_frame_rate(uint32_t frame_rate);
 
@@ -19,25 +19,24 @@ Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
                                 &light_display,
                                 &light_display_sh1106,
-                                &light_platform,
-                                &light_framework);
+                                &light_core);
 
 static uint32_t last_run;
 static uint32_t next_frame;
 static uint32_t frame_interval_ms;
 static uint32_t frame_counter;
 
-void main()
+void main(int argc, char **argv)
 {
         light_framework_init();
-        light_framework_run();
+        light_framework_run(argc, argv);
 
 }
   
-static void screentest_event(const struct light_module *module, uint8_t event)
+static void screentest_event(const struct light_module *module, uint8_t event, void *arg)
 {
         switch(event) {
-        case LF_EVENT_LOAD:;
+        case LF_EVENT_MODULE_LOAD:;
                 render = rend_context_create(
                         "screentest_render_main", 128, 64, 1);
                 render->point_radius = 2;
@@ -59,13 +58,13 @@ static void screentest_event(const struct light_module *module, uint8_t event)
                 light_info("display pipeline setup complete","");
         break;
         // TODO implement unregister for event hooks
-        case LF_EVENT_UNLOAD:;
+        case LF_EVENT_MODULE_UNLOAD:;
         break; 
         }
 }
 static uint8_t screentest_main(struct light_application *app)
 {
-        uint32_t now = light_platform_get_system_time_ms();
+        uint32_t now = light_platform_get_time_since_init();
         light_info("enter Screentest application task, time=%dms, time since last run=%dms", now, last_run - now);
 
         if(now >= next_frame) {
