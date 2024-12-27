@@ -10,16 +10,10 @@
             "servertype": "openocd",
             "cwd": "${workspaceRoot}/build",
             "configFiles": ["${workspaceRoot}/openocd.cfg"],
+            "searchDir": ["${workspaceRoot}/../../tools/openocd/scripts"],
             "svdFile": "${workspaceRoot}/../pico-sdk/src/rp2040/hardware_regs/rp2040.svd",
             "request": "launch",
-            "executable": "${command:cmake.launchTargetPath}",
-            "windows": {
-                "serverpath": "D:/workspaces/embedded/tools/openocd/bin/openocd.exe"
-            },
-            "linux": {
-                "armToolchainPath": "/usr/local/bin",
-                "gdbPath": "arm-none-eabi-gdb"
-            }
+            "executable": "${command:cmake.launchTargetPath}"
         },
         {
             "name": "host-mode",
