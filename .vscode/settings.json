@@ -1,6 +1,16 @@
 {
+    "cmake.environment": {
+        "Path": "C:\\Users\\aful018\\tools\\w64devkit\\bin;C:\\Users\\aful018\\tools\\arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin;${env:PATH}",
+        "PATH": "C:\\Users\\aful018\\tools\\w64devkit\\bin;C:\\Users\\aful018\\tools\\arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin;${env:PATH}",
+        "PICO_SDK_PATH": "../../pico-sdk"
+    },
+    "terminal.integrated.env.windows": {
+        "Path": "C:\\Users\\aful018\\tools\\w64devkit\\bin;C:\\Users\\aful018\\tools\\arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin;${env:PATH}",
+        "PATH": "C:\\Users\\aful018\\tools\\w64devkit\\bin;C:\\Users\\aful018\\tools\\arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin;${env:PATH}",
+        "PICO_SDK_PATH": "../../pico-sdk"
+    },
     "C_Cpp.autoAddFileAssociations": false,
     "C_Cpp.loggingLevel": "Information",
-    //"cortex-debug.armToolchainPath": "D:/workspaces/embedded/tools/arm-gcc/11.2/bin"
+    "cortex-debug.armToolchainPath": "C:\\Users\\aful018\\tools\\arm-gnu-toolchain-15.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin"
     //"cortex-debug.openocdPath": "D:/workspaces/embedded/tools/openocd/bin/openocd.exe"
 }
