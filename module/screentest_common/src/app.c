@@ -13,10 +13,6 @@ static void screentest_set_frame_rate(uint32_t frame_rate);
 
 void __screentest_hardware_init();
 
-// app: screentest_po13
-// defines two pico-oled-1.3 displays, one attached to the default pins
-// for the display board, and one using spi port 0 and pins 16-20
-
 Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
                                 &light_display,
@@ -53,7 +49,7 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
                         light_display_set_render_context(_display[i], render);
                 }
-                light_info("display pipeline setup complete","");
+                light_info("display pipeline setup complete");
         break;
         // TODO implement unregister for event hooks
         case LF_EVENT_MODULE_UNLOAD:
