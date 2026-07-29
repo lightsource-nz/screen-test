@@ -66,6 +66,7 @@ static uint8_t screentest_main(struct light_application *app)
                 frame_counter++;
                 seq_counter++;
                 seq_counter %= seq_wrap;
+                rend_draw_clear(render);
 //              rend_draw_point(display->render_ctx, (rend_point2d) {64, 32});
                 rend_draw_circle(render, (rend_point2d) {64, 32}, 2 * (seq_counter + 1), true);
 //              rend_debug_buffer_print_stdout(display->render_ctx);
