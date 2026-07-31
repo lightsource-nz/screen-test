@@ -52,6 +52,11 @@
             "targets": ["screentest_sh1106_spi4"]
         },
         {
+            "name": "build-screentest_sh1106_i2c-debug",
+            "configurePreset": "conf-screentest-debug",
+            "targets": ["screentest_sh1106_i2c"]
+        },
+        {
             "name": "build-screentest_po13-debug",
             "configurePreset": "conf-screentest-debug",
             "targets": ["screentest_po13"]

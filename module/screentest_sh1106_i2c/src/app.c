@@ -12,8 +12,10 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
 static uint8_t screentest_main(struct light_application *app);
 static void screentest_set_frame_rate(uint32_t frame_rate);
 
-// app: screentest_sh1106_spi4
-// defines one generic 128x64 display with sh1106 driver, on SPI port 0
+// app: screentest_sh1106_i2c
+// defines one generic 128x64 display with sh1106 driver, on I2C port 0 -- for the second
+// physical panel (same SH1106 IC/glass, different breakout board that exposes I2C instead of
+// SPI). see screentest_sh1106_spi4 for the SPI-wired board
 
 Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
@@ -32,7 +34,7 @@ void main(int argc, char **argv)
         light_framework_run(argc, argv);
 
 }
-  
+
 static void screentest_event(const struct light_module *module, uint8_t event, void *arg)
 {
         switch(event) {
@@ -43,13 +45,12 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
                 frame_counter = 0;
                 screentest_set_frame_rate(24);
                 struct io_context *io_main =
-                        light_display_ioport_setup_io_spi_4p(
+                        light_display_ioport_setup_io_i2c(
                                 ST_DISPLAY_0_PORT_ID,
                                 ST_DISPLAY_0_PIN_RESET,
-                                ST_DISPLAY_0_PIN_CS,
-                                ST_DISPLAY_0_PIN_DC,
-                                ST_DISPLAY_0_PIN_SCK,
-                                ST_DISPLAY_0_PIN_TX);
+                                ST_DISPLAY_0_I2C_ADDR,
+                                ST_DISPLAY_0_PIN_SCL,
+                                ST_DISPLAY_0_PIN_SDA);
                 struct display_device *disp_main =
                         light_display_sh1106_create_device(
                                 "screentest_display_main", 128, 64, 1, io_main);
@@ -59,7 +60,7 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
         break;
         // TODO implement unregister for event hooks
         case LF_EVENT_MODULE_UNLOAD:;
-        break; 
+        break;
         }
 }
 static uint8_t screentest_main(struct light_application *app)
