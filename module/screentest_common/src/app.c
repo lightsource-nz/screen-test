@@ -37,8 +37,15 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
 {
         switch(event) {
         case LF_EVENT_MODULE_LOAD:;
+                // both test displays (po13 and the second raw SH1107 device) are physically
+                // 64 wide x 128 tall portrait panels -- create the render context at those
+                // physical dimensions and rotate it, rather than creating it pre-rotated
+                // (128x64) with no rotation transform, which mismatches the actual device
+                // buffers and scrambles pixel positions (matches crossfire's own working
+                // setup for the same panel -- see crossfire.c's crossfire_display_init())
                 render = rend_context_create(
-                        "screentest_render_main", 128, 64, 1);
+                        "screentest_render_main", 64, 128, 1);
+                rend_context_set_rotation(render, REND_ROTATE_90);
                 render->point_radius = 2;
                 frame_counter = 0;
                 seq_counter = 0;
@@ -72,7 +79,7 @@ static uint8_t screentest_main(struct light_application *app)
 //              rend_debug_buffer_print_stdout(display->render_ctx);
 
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
-                        light_display_command_update(_display[i]);
+                        light_display_command_update_async(_display[i]);
                 }
         }
 

@@ -3,8 +3,6 @@
 #include <module/mod_light_display.h>
 #include <module/mod_light_display_sh1106.h>
 
-#include "screentest_internal.h"
-
 static struct rend_context *render;
 static struct display_device *display[ST_DISPLAY_COUNT];
 
