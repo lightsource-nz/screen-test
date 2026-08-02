@@ -46,6 +46,7 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
                 render = rend_context_create(
                         "screentest_render_main", 64, 128, 1);
                 rend_context_set_rotation(render, REND_ROTATE_90);
+                rend_context_enable_double_buffer(render);
                 render->point_radius = 2;
                 frame_counter = 0;
                 seq_counter = 0;
@@ -68,11 +69,16 @@ static uint8_t screentest_main(struct light_application *app)
         uint32_t now = light_platform_get_time_since_init();
         light_info("enter Screentest application task, time=%dms, time since last run=%dms", now, last_run - now);
 
-        if(now >= next_frame) {
+        // the buffer we're about to swap into is the one that was in flight two frames
+        // ago -- if some device is still flushing from it, wait rather than start
+        // drawing over data a DMA transfer is still reading (see
+        // rend_context_swap_buffers()/light_display_render_context_busy())
+        if(now >= next_frame && !light_display_render_context_busy(render)) {
                 next_frame += frame_interval_ms;
                 frame_counter++;
                 seq_counter++;
                 seq_counter %= seq_wrap;
+                rend_context_swap_buffers(render);
                 rend_draw_clear(render);
 //              rend_draw_point(display->render_ctx, (rend_point2d) {64, 32});
                 rend_draw_circle(render, (rend_point2d) {64, 32}, 2 * (seq_counter + 1), true);
