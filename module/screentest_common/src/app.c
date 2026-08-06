@@ -1,6 +1,7 @@
 #include <screentest.h>
 #include <light_platform.h>
 #include <module/mod_light_display.h>
+#include <module/mod_light_touch.h>
 
 #include "screentest_internal.h"
 
@@ -16,6 +17,7 @@ void __screentest_hardware_init();
 Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
                                 &light_display,
+                                &light_touch,
                                 &light_core);
 
 static uint32_t last_run;

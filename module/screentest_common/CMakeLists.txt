@@ -16,6 +16,7 @@ target_sources(
 target_link_libraries(
         screentest_common PUBLIC
         light_display
+        light_touch
         rend
         light_core
 )
