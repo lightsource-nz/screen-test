@@ -37,15 +37,17 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
 {
         switch(event) {
         case LF_EVENT_MODULE_LOAD:;
-                // both test displays (po13 and the second raw SH1107 device) are physically
-                // 64 wide x 128 tall portrait panels -- create the render context at those
-                // physical dimensions and rotate it, rather than creating it pre-rotated
-                // (128x64) with no rotation transform, which mismatches the actual device
-                // buffers and scrambles pixel positions (matches crossfire's own working
-                // setup for the same panel -- see crossfire.c's crossfire_display_init())
+                // geometry is overridable per-app via ST_RENDER_WIDTH/HEIGHT/BPP/ROTATION in
+                // screentest.h (see this file's own default, used as a fallback by apps with
+                // no screentest.h of their own, e.g. screentest_po13). the OLED default here
+                // creates the render context at the panels' actual physical 64x128 portrait
+                // dimensions and rotates it, rather than creating it pre-rotated (128x64) with
+                // no rotation transform, which would mismatch the real device buffers and
+                // scramble pixel positions (matches crossfire's own working setup for the same
+                // panel -- see crossfire.c's crossfire_display_init())
                 render = rend_context_create(
-                        "screentest_render_main", 64, 128, 1);
-                rend_context_set_rotation(render, REND_ROTATE_90);
+                        "screentest_render_main", ST_RENDER_WIDTH, ST_RENDER_HEIGHT, ST_RENDER_BPP);
+                rend_context_set_rotation(render, ST_RENDER_ROTATION);
                 rend_context_enable_double_buffer(render);
                 render->point_radius = 2;
                 frame_counter = 0;
@@ -80,8 +82,8 @@ static uint8_t screentest_main(struct light_application *app)
                 seq_counter %= seq_wrap;
                 rend_context_swap_buffers(render);
                 rend_draw_clear(render);
-//              rend_draw_point(display->render_ctx, (rend_point2d) {64, 32});
-                rend_draw_circle(render, (rend_point2d) {64, 32}, 2 * (seq_counter + 1), true);
+//              rend_draw_point(display->render_ctx, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y});
+                rend_draw_circle(render, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y}, 2 * (seq_counter + 1), true);
 //              rend_debug_buffer_print_stdout(display->render_ctx);
 
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {

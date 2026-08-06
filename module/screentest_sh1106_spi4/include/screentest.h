@@ -18,6 +18,16 @@
 // TODO make display count configurable at runtime
 #define ST_DISPLAY_COUNT                1
 
+// this panel is physically 64 wide x 128 tall, portrait -- see screentest_common's
+// screentest.h for why the render context is created at those dimensions and rotated
+// rather than created pre-rotated
+#define ST_RENDER_WIDTH                 64
+#define ST_RENDER_HEIGHT                128
+#define ST_RENDER_BPP                   1
+#define ST_RENDER_ROTATION              REND_ROTATE_90
+#define ST_RENDER_CIRCLE_X              64
+#define ST_RENDER_CIRCLE_Y              32
+
 #define ST_DISPLAY_0_PORT_ID            PORT_SPI_0
 #define ST_DISPLAY_0_PIN_CS             17
 #define ST_DISPLAY_0_PIN_DC             16

@@ -1,13 +1,42 @@
 #include <screentest.h>
+#include <light_display_st7789.h>
 
 void __screentest_hardware_init();
 
 // app: screentest_ws_touch169
-// board bring-up milestone only -- no display/touch/IMU/RTC driver wired up yet, just
-// confirms the Waveshare RP2350-Touch-LCD-1.69's chip/board plumbing boots and the
-// framework's main loop runs
+// board's ST7789 panel, 240x280, SPI 4-wire on GPIO8-11 (real spi1 hardware -- unlike
+// crossfire's PIO-emulated SPI, this board has nothing else contending for spi1)
+
+#if(LIGHT_SYSTEM == SYSTEM_PICO_SDK)
+#include <hardware/gpio.h>
+#endif
 
 void __screentest_hardware_init()
 {
-        light_info("board bring-up: no display driver wired up yet","");
+        struct io_context *io = light_display_ioport_setup_io_spi_4p(
+                PORT_SPI_1,
+                ST_DISPLAY_PIN_RESET, ST_DISPLAY_PIN_CS, ST_DISPLAY_PIN_DC,
+                ST_DISPLAY_PIN_SCK, ST_DISPLAY_PIN_MOSI);
+        struct display_device *disp = light_display_st7789_create_device(
+                "screentest_display_main", ST_DISPLAY_WIDTH, ST_DISPLAY_HEIGHT, io);
+        _display[0] = disp;
+        // both row_offset=20 and col_offset=20 were tried here and had zero visible effect
+        // on a persistent noise strip -- but that test was confounded by screentest_common's
+        // render context being hardcoded to the small OLED test rigs' 64x128 1bpp geometry
+        // (now fixed, see ST_RENDER_WIDTH/HEIGHT/BPP in this app's screentest.h) and by a
+        // width/height axis experiment (also since reverted). now that both are fixed and
+        // the noise strip is confirmed to persist against a genuinely correct buffer,
+        // retrying the original row_offset=20 guess -- 20 is the commonly-cited GDDRAM
+        // offset for this exact panel size in the maker community
+        light_display_st7789_set_offset(disp, 0, 20);
+
+        // backlight is a plain GPIO, not part of the SPI command set -- no existing
+        // driver/ioport primitive covers it, so it's driven directly here
+#if(LIGHT_SYSTEM == SYSTEM_PICO_SDK)
+        gpio_init(ST_DISPLAY_PIN_BL);
+        gpio_set_dir(ST_DISPLAY_PIN_BL, true);
+        gpio_put(ST_DISPLAY_PIN_BL, true);
+#endif
+
+        light_info("display pipeline setup complete","");
 }
