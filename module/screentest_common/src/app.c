@@ -67,7 +67,7 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
 static uint8_t screentest_main(struct light_application *app)
 {
         uint32_t now = light_platform_get_time_since_init();
-        light_info("enter Screentest application task, time=%dms, time since last run=%dms", now, last_run - now);
+        light_trace("enter Screentest application task, time=%dms, time since last run=%dms", now, last_run - now);
 
         // the buffer we're about to swap into is the one that was in flight two frames
         // ago -- if some device is still flushing from it, wait rather than start

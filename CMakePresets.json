@@ -27,6 +27,18 @@
             ]
         },
         {
+            "name": "conf-screentest-waveshare-touch169-debug",
+            "inherits": [
+                "conf-screentest-base",
+                "conf-light-waveshare-touch169",
+                "conf-light-debug"
+            ],
+            "binaryDir": "${sourceDir}/build-waveshare-touch169",
+            "cacheVariables": {
+                "PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS": "-1"
+            }
+        },
+        {
             "name": "conf-screentest-trace",
             "inherits": [
                 "conf-screentest-base",
@@ -60,6 +72,11 @@
             "name": "build-screentest_po13-debug",
             "configurePreset": "conf-screentest-debug",
             "targets": ["screentest_po13"]
+        },
+        {
+            "name": "build-screentest-waveshare-touch169-debug",
+            "configurePreset": "conf-screentest-waveshare-touch169-debug",
+            "targets": ["screentest_ws_touch169"]
         },
         {
             "name": "build-screentest-trace",
