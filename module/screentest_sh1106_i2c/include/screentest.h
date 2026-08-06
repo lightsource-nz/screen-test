@@ -32,7 +32,7 @@
 #define ST_DISPLAY_0_PIN_SCL            5
 #define ST_DISPLAY_0_PIN_SDA            4
 // this board breaks out only SCL/SDA/power -- no hardware RESET line
-#define ST_DISPLAY_0_PIN_RESET          LIGHT_DISPLAY_IOPORT_PIN_NONE
+#define ST_DISPLAY_0_PIN_RESET          LIGHT_IOPORT_PIN_NONE
 // common default 7-bit I2C address for this controller family (SA0/D-C# pin tied low) --
 // change to 0x3D if the module's address-select pin is tied high instead
 #define ST_DISPLAY_0_I2C_ADDR           0x3C

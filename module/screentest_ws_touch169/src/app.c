@@ -14,7 +14,7 @@ void __screentest_hardware_init();
 
 void __screentest_hardware_init()
 {
-        struct io_context *io = light_display_ioport_setup_io_spi_4p(
+        struct io_context *io = light_ioport_setup_io_spi_4p(
                 PORT_SPI_1,
                 ST_DISPLAY_PIN_RESET, ST_DISPLAY_PIN_CS, ST_DISPLAY_PIN_DC,
                 ST_DISPLAY_PIN_SCK, ST_DISPLAY_PIN_MOSI);
@@ -44,7 +44,7 @@ void __screentest_hardware_init()
         // shared I2C1 bus (also used by IMU/RTC, not yet implemented) -- setup_io_i2c
         // re-inits the same peripheral each time it's called, harmless as long as the
         // params (scl/sda) agree, which they will once IMU/RTC support lands
-        struct io_context *touch_io = light_display_ioport_setup_io_i2c(
+        struct io_context *touch_io = light_ioport_setup_io_i2c(
                 PORT_I2C_1, ST_TOUCH_PIN_RST, CST816T_I2C_ADDR,
                 ST_TOUCH_PIN_SCL, ST_TOUCH_PIN_SDA);
         light_touch_cst816t_create_device(

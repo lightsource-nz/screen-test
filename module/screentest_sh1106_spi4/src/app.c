@@ -43,7 +43,7 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
                 frame_counter = 0;
                 screentest_set_frame_rate(24);
                 struct io_context *io_main =
-                        light_display_ioport_setup_io_spi_4p(
+                        light_ioport_setup_io_spi_4p(
                                 ST_DISPLAY_0_PORT_ID,
                                 ST_DISPLAY_0_PIN_RESET,
                                 ST_DISPLAY_0_PIN_CS,

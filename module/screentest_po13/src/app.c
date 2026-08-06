@@ -16,7 +16,7 @@ void __screentest_hardware_init()
                         "screentest_display_main", io_main);
         _display[0] = disp_main;
         struct io_context *io_sec =
-                light_display_ioport_setup_io_spi_4p(
+                light_ioport_setup_io_spi_4p(
                         PORT_SPI_0,
                         ST_DISPLAY_1_PIN_RESET,
                         ST_DISPLAY_1_PIN_CS,

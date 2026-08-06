@@ -19,7 +19,7 @@
 // which has no screentest.h of its own and falls back to this file). apps with a
 // differently-shaped display (e.g. screentest_ws_touch169's 240x280 16bpp panel)
 // provide their own complete screentest.h that shadows this one entirely, including
-// these four -- see light_display_ioport's PORT_SPI_1 wiring convention for why that
+// these four -- see light_ioport's PORT_SPI_1 wiring convention for why that
 // shadowing already has to work this way for ST_DISPLAY_COUNT et al
 #define ST_RENDER_WIDTH                 64
 #define ST_RENDER_HEIGHT                128
