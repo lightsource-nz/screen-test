@@ -3,6 +3,7 @@
 
 #include <light.h>
 #include <light_display.h>
+#include <light_touch.h>
 
 #include <stdint.h>
 
@@ -37,6 +38,11 @@
 #define ST_DISPLAY_1_PIN_RESET          20
 
 extern struct display_device *_display[ST_DISPLAY_COUNT];
+// NULL on boards with no touch hardware -- __screentest_hardware_init() only assigns
+// this on the one board that has a touch device (screentest_ws_touch169); everywhere
+// else it stays unset (zero-initialized), and the touch-triggered animation in app.c
+// is a no-op whenever it's NULL
+extern struct touch_device *_touch_main;
 
 extern void __screentest_hardware_init();
 

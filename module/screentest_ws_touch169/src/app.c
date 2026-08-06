@@ -47,7 +47,7 @@ void __screentest_hardware_init()
         struct io_context *touch_io = light_ioport_setup_io_i2c(
                 PORT_I2C_1, ST_TOUCH_PIN_RST, CST816T_I2C_ADDR,
                 ST_TOUCH_PIN_SCL, ST_TOUCH_PIN_SDA);
-        light_touch_cst816t_create_device(
+        _touch_main = light_touch_cst816t_create_device(
                 "screentest_touch_main", ST_TOUCH_X_MAX, ST_TOUCH_Y_MAX, touch_io, ST_TOUCH_PIN_INT);
 
         light_info("touch pipeline setup complete","");

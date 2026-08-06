@@ -7,6 +7,19 @@
 
 static struct rend_context *render;
 struct display_device *_display[ST_DISPLAY_COUNT];
+struct touch_device *_touch_main;
+
+// touch-triggered ripple: an outlined circle appears centered on the touch point on the
+// down-edge of a touch, grows outward each frame, then disappears once it exceeds the
+// max radius. _touch_main is NULL on boards with no touch hardware, so this is inert
+// there -- touch_was_active never becomes true, and touch_anim_active never gets set
+#define TOUCH_ANIM_START_RADIUS         4
+#define TOUCH_ANIM_GROWTH               4
+#define TOUCH_ANIM_MAX_RADIUS           40
+
+static bool touch_was_active;
+static bool touch_anim_active;
+static uint16_t touch_anim_x, touch_anim_y, touch_anim_radius;
 
 static void screentest_event(const struct light_module *module, uint8_t event, void *arg);
 static uint8_t screentest_main(struct light_application *app);
@@ -73,6 +86,18 @@ static uint8_t screentest_main(struct light_application *app)
         uint32_t now = light_platform_get_time_since_init();
         light_trace("enter Screentest application task, time=%dms, time since last run=%dms", now, last_run - now);
 
+        // checked every tick, not gated by the frame timer below -- light_touch's own
+        // periodic task keeps _touch_main->touch_active/x/y fresh independently of this
+        // app's frame rate, so throttling this check too could miss a brief touch
+        bool touch_active_now = _touch_main && _touch_main->touch_active;
+        if(touch_active_now && !touch_was_active) {
+                touch_anim_active = true;
+                touch_anim_x = _touch_main->x;
+                touch_anim_y = _touch_main->y;
+                touch_anim_radius = TOUCH_ANIM_START_RADIUS;
+        }
+        touch_was_active = touch_active_now;
+
         // the buffer we're about to swap into is the one that was in flight two frames
         // ago -- if some device is still flushing from it, wait rather than start
         // drawing over data a DMA transfer is still reading (see
@@ -87,6 +112,13 @@ static uint8_t screentest_main(struct light_application *app)
 //              rend_draw_point(display->render_ctx, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y});
                 rend_draw_circle(render, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y}, 2 * (seq_counter + 1), true);
 //              rend_debug_buffer_print_stdout(display->render_ctx);
+
+                if(touch_anim_active) {
+                        rend_draw_circle(render, (rend_point2d) {touch_anim_x, touch_anim_y}, touch_anim_radius, false);
+                        touch_anim_radius += TOUCH_ANIM_GROWTH;
+                        if(touch_anim_radius > TOUCH_ANIM_MAX_RADIUS)
+                                touch_anim_active = false;
+                }
 
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
                         light_display_command_update_async(_display[i]);

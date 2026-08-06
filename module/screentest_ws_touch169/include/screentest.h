@@ -56,6 +56,7 @@
 #define ST_RENDER_CIRCLE_Y              (ST_RENDER_HEIGHT / 2)
 
 extern struct display_device *_display[ST_DISPLAY_COUNT];
+extern struct touch_device *_touch_main;
 
 extern void __screentest_hardware_init();
 
