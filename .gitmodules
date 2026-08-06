@@ -22,3 +22,9 @@
 [submodule "module/light_display_st7789"]
 	path = module/light_display_st7789
 	url = https://github.com/lightsource-nz/light_display_st7789.git
+[submodule "module/light_touch"]
+	path = module/light_touch
+	url = https://github.com/lightsource-nz/light_touch.git
+[submodule "module/light_touch_cst816t"]
+	path = module/light_touch_cst816t
+	url = https://github.com/lightsource-nz/light_touch_cst816t.git
