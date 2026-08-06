@@ -3,6 +3,7 @@
 
 #include <light.h>
 #include <light_display.h>
+#include <light_touch.h>
 
 #include <stdint.h>
 
@@ -20,6 +21,15 @@
 #define ST_DISPLAY_PIN_MOSI             11
 #define ST_DISPLAY_PIN_RESET            13
 #define ST_DISPLAY_PIN_BL               25
+
+// CST816T touch controller -- shared I2C1 bus (also used by IMU/RTC, not yet
+// implemented), confirmed from the board's schematic + wiki pin table during bring-up
+#define ST_TOUCH_PIN_SDA                6
+#define ST_TOUCH_PIN_SCL                7
+#define ST_TOUCH_PIN_INT                21
+#define ST_TOUCH_PIN_RST                22
+#define ST_TOUCH_X_MAX                  ST_DISPLAY_WIDTH
+#define ST_TOUCH_Y_MAX                  ST_DISPLAY_HEIGHT
 
 // tried width/height swapped (280x240) as an experiment to explain the noise strip --
 // disproved, not confirmed: it made the noise strip wider and fragmented the test circle

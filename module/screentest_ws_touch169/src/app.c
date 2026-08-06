@@ -1,5 +1,6 @@
 #include <screentest.h>
 #include <light_display_st7789.h>
+#include <light_touch_cst816t.h>
 
 void __screentest_hardware_init();
 
@@ -39,4 +40,15 @@ void __screentest_hardware_init()
 #endif
 
         light_info("display pipeline setup complete","");
+
+        // shared I2C1 bus (also used by IMU/RTC, not yet implemented) -- setup_io_i2c
+        // re-inits the same peripheral each time it's called, harmless as long as the
+        // params (scl/sda) agree, which they will once IMU/RTC support lands
+        struct io_context *touch_io = light_display_ioport_setup_io_i2c(
+                PORT_I2C_1, ST_TOUCH_PIN_RST, CST816T_I2C_ADDR,
+                ST_TOUCH_PIN_SCL, ST_TOUCH_PIN_SDA);
+        light_touch_cst816t_create_device(
+                "screentest_touch_main", ST_TOUCH_X_MAX, ST_TOUCH_Y_MAX, touch_io, ST_TOUCH_PIN_INT);
+
+        light_info("touch pipeline setup complete","");
 }

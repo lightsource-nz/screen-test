@@ -16,6 +16,8 @@ target_link_libraries(
         screentest_common
         light_display
         light_display_st7789
+        light_touch
+        light_touch_cst816t
         rend
         light_core
 )
