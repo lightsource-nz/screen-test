@@ -19,3 +19,6 @@
 [submodule "cmake/light_presets"]
 	path = cmake/light_presets
 	url = https://github.com/lightsource-nz/light_presets.git
+[submodule "module/light_display_st7789"]
+	path = module/light_display_st7789
+	url = https://github.com/lightsource-nz/light_display_st7789.git
