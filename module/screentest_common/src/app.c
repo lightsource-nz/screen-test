@@ -20,6 +20,21 @@ struct touch_device *_touch_main;
 static bool touch_was_active;
 static bool touch_anim_active;
 static uint16_t touch_anim_x, touch_anim_y, touch_anim_radius;
+// whether a ripple was drawn into the frame that is currently on the panel. the frame
+// after a ripple ends still has to repaint where it used to be in order to erase it, so
+// the update region has to keep covering it for one frame longer than it is drawn
+static bool touch_anim_on_panel;
+
+// grows an accumulating bounding box to cover a circle. signed, because a circle near an
+// edge extends past it and rend_point2d's uint16_t would wrap instead of clipping
+static void _bbox_add_circle(int32_t cx, int32_t cy, int32_t r,
+                        int32_t *x0, int32_t *y0, int32_t *x1, int32_t *y1)
+{
+        if(cx - r < *x0) *x0 = cx - r;
+        if(cy - r < *y0) *y0 = cy - r;
+        if(cx + r > *x1) *x1 = cx + r;
+        if(cy + r > *y1) *y1 = cy + r;
+}
 
 static void screentest_event(const struct light_module *module, uint8_t event, void *arg);
 static uint8_t screentest_main(struct light_application *app);
@@ -113,6 +128,7 @@ static uint8_t screentest_main(struct light_application *app)
                 rend_draw_circle(render, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y}, 2 * (seq_counter + 1), true);
 //              rend_debug_buffer_print_stdout(display->render_ctx);
 
+                bool ripple_drawn = touch_anim_active;
                 if(touch_anim_active) {
                         rend_draw_circle(render, (rend_point2d) {touch_anim_x, touch_anim_y}, touch_anim_radius, false);
                         touch_anim_radius += TOUCH_ANIM_GROWTH;
@@ -120,8 +136,29 @@ static uint8_t screentest_main(struct light_application *app)
                                 touch_anim_active = false;
                 }
 
+                // the whole buffer was cleared and redrawn above, but the only pixels that
+                // can actually differ from what the panel already shows are the two
+                // animated circles -- so only a box covering those is pushed. the circles'
+                // MAX radii are used rather than their current ones, since the region also
+                // has to cover erasing whatever was drawn in the previous frame
+                int32_t bx0 = INT32_MAX, by0 = INT32_MAX, bx1 = INT32_MIN, by1 = INT32_MIN;
+                _bbox_add_circle(ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y, 2 * seq_wrap,
+                                &bx0, &by0, &bx1, &by1);
+                if(ripple_drawn || touch_anim_on_panel) {
+                        _bbox_add_circle(touch_anim_x, touch_anim_y, TOUCH_ANIM_MAX_RADIUS,
+                                        &bx0, &by0, &bx1, &by1);
+                }
+                touch_anim_on_panel = ripple_drawn;
+
+                if(bx0 < 0) bx0 = 0;
+                if(by0 < 0) by0 = 0;
+                if(bx1 > (int32_t)render->dim_x - 1) bx1 = render->dim_x - 1;
+                if(by1 > (int32_t)render->dim_y - 1) by1 = render->dim_y - 1;
+
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
-                        light_display_command_update_async(_display[i]);
+                        light_display_command_update_region_async(_display[i],
+                                (rend_point2d) {(uint16_t)bx0, (uint16_t)by0},
+                                (rend_point2d) {(uint16_t)bx1, (uint16_t)by1});
                 }
         }
 

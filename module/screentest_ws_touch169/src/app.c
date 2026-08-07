@@ -30,6 +30,13 @@ void __screentest_hardware_init()
         // retrying the original row_offset=20 guess -- 20 is the commonly-cited GDDRAM
         // offset for this exact panel size in the maker community
         light_display_st7789_set_offset(disp, 0, 20);
+        // creating the device already cleared the panel -- but that ran with the offset
+        // still at its default of 0, so it blanked GDDRAM rows 0..279 while every update
+        // from here on writes rows 20..299. that leaves rows 280..299 holding whatever
+        // powered up in them. a full-frame update happens to paint over that band every
+        // frame, which is why it stayed hidden until updates became region-limited and
+        // stopped touching it. clear again now that the offset is right
+        light_display_command_clear(disp, 0);
 
         // backlight is a plain GPIO, not part of the SPI command set -- no existing
         // driver/ioport primitive covers it, so it's driven directly here
