@@ -55,6 +55,12 @@
 #define ST_RENDER_CIRCLE_X              (ST_RENDER_WIDTH / 2)
 #define ST_RENDER_CIRCLE_Y              (ST_RENDER_HEIGHT / 2)
 
+// see screentest_common's screentest.h for what these control -- this header shadows that
+// one entirely, so they have to be repeated here rather than inherited
+#define ST_FRAME_RATE                   24
+#define ST_CIRCLE_MAX_RADIUS            16
+#define ST_CIRCLE_GROWTH_PX_PER_S       8
+
 extern struct display_device *_display[ST_DISPLAY_COUNT];
 extern struct touch_device *_touch_main;
 

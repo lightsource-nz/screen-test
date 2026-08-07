@@ -31,6 +31,18 @@
 #define ST_RENDER_CIRCLE_X              64
 #define ST_RENDER_CIRCLE_Y              32
 
+// how often the shared app redraws. also overridable per-app: a display that can't flush
+// a frame this often will simply skip frames rather than fall behind, since the render
+// loop already gates on light_display_render_context_busy()
+#define ST_FRAME_RATE                   24
+// the animated test circle grows from 1px to this radius, then restarts
+#define ST_CIRCLE_MAX_RADIUS            16
+// ...at this many pixels per second. expressed as a RATE rather than a per-frame step so
+// the animation runs at the same speed whatever ST_FRAME_RATE is, and doesn't lurch when a
+// frame gets skipped. with the two values above that's a 2 second cycle, stepping a pixel
+// every 125ms -- slow enough to read as growth, fine enough not to look like it's jumping
+#define ST_CIRCLE_GROWTH_PX_PER_S       8
+
 #define ST_DISPLAY_1_PIN_CS             17
 #define ST_DISPLAY_1_PIN_DC             16
 #define ST_DISPLAY_1_PIN_SCK            18

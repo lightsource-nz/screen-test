@@ -60,8 +60,20 @@ static uint32_t next_frame;
 static uint32_t frame_interval_ms;
 static uint32_t frame_counter;
 
-static uint8_t seq_counter;
-static uint8_t seq_wrap;
+// radius of the animated test circle at a given moment: grows from 1px to
+// ST_CIRCLE_MAX_RADIUS at ST_CIRCLE_GROWTH_PX_PER_S, then restarts.
+//
+// derived from the clock rather than advanced once per frame, so the animation keeps the
+// same real-world speed if the frame rate changes, and doesn't slow down when a frame is
+// skipped because a display is still flushing the last one. it also can't drift, since
+// each frame recomputes from absolute time rather than accumulating
+static uint16_t _circle_radius(uint32_t now)
+{
+        const uint32_t cycle_ms =
+                        ((uint32_t)ST_CIRCLE_MAX_RADIUS * 1000) / ST_CIRCLE_GROWTH_PX_PER_S;
+        uint32_t phase = now % cycle_ms;
+        return 1 + (uint16_t)((phase * ST_CIRCLE_MAX_RADIUS) / cycle_ms);
+}
 
 void main(int argc, char **argv)
 {
@@ -88,9 +100,7 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
                 rend_context_enable_double_buffer(render);
                 render->point_radius = 2;
                 frame_counter = 0;
-                seq_counter = 0;
-                seq_wrap = 8;
-                screentest_set_frame_rate(2);
+                screentest_set_frame_rate(ST_FRAME_RATE);
                 light_debug("passing control to display hardware setup function","");
                 __screentest_hardware_init();
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
@@ -141,12 +151,11 @@ static uint8_t screentest_main(struct light_application *app)
         if(now >= next_frame && !light_display_render_context_busy(render)) {
                 next_frame += frame_interval_ms;
                 frame_counter++;
-                seq_counter++;
-                seq_counter %= seq_wrap;
                 rend_context_swap_buffers(render);
                 rend_draw_clear(render);
 //              rend_draw_point(display->render_ctx, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y});
-                rend_draw_circle(render, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y}, 2 * (seq_counter + 1), true);
+                rend_draw_circle(render, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y},
+                                _circle_radius(now), true);
 //              rend_debug_buffer_print_stdout(display->render_ctx);
 
                 bool ripple_drawn = touch_anim_active;
@@ -163,7 +172,7 @@ static uint8_t screentest_main(struct light_application *app)
                 // than their current ones, so a shrinking circle still erases its own
                 // previous extent
                 int32_t cx0 = INT32_MAX, cy0 = INT32_MAX, cx1 = INT32_MIN, cy1 = INT32_MIN;
-                _bbox_add_circle(ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y, 2 * seq_wrap,
+                _bbox_add_circle(ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y, ST_CIRCLE_MAX_RADIUS,
                                 &cx0, &cy0, &cx1, &cy1);
                 if(ripple_drawn) {
                         _bbox_add_circle(touch_anim_x, touch_anim_y, TOUCH_ANIM_MAX_RADIUS,
