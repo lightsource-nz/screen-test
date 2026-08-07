@@ -120,6 +120,19 @@ static uint8_t screentest_main(struct light_application *app)
         }
         touch_was_active = touch_active_now;
 
+        // gestures are recognised on release by light_touch itself, so this only has to
+        // collect them. checked every tick for the same reason as the touch state above
+        struct touch_gesture gesture;
+        if(_touch_main && light_touch_take_gesture(_touch_main, &gesture)) {
+                static const char *const gesture_name[] = {
+                        "none", "swipe up", "swipe down", "swipe left", "swipe right"
+                };
+                light_info("gesture: %s from (%d,%d) to (%d,%d)",
+                                gesture_name[gesture.type],
+                                gesture.start_x, gesture.start_y,
+                                gesture.end_x, gesture.end_y);
+        }
+
         // the buffer we're about to swap into is the one that was in flight two frames
         // ago -- if some device is still flushing from it, wait rather than start
         // drawing over data a DMA transfer is still reading (see
