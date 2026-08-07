@@ -60,6 +60,8 @@
 #define ST_FRAME_RATE                   24
 #define ST_CIRCLE_MAX_RADIUS            16
 #define ST_CIRCLE_GROWTH_PX_PER_S       8
+#define ST_SWIPE_MOVE_DISTANCE          40
+#define ST_SWIPE_MOVE_MS                400
 
 extern struct display_device *_display[ST_DISPLAY_COUNT];
 extern struct touch_device *_touch_main;

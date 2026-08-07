@@ -42,6 +42,10 @@
 // frame gets skipped. with the two values above that's a 2 second cycle, stepping a pixel
 // every 125ms -- slow enough to read as growth, fine enough not to look like it's jumping
 #define ST_CIRCLE_GROWTH_PX_PER_S       8
+// each swipe slides the circle this far in the swiped direction, over this long. the
+// circle's centre wraps at the canvas edges, so it can be driven around indefinitely
+#define ST_SWIPE_MOVE_DISTANCE          40
+#define ST_SWIPE_MOVE_MS                400
 
 #define ST_DISPLAY_1_PIN_CS             17
 #define ST_DISPLAY_1_PIN_DC             16
