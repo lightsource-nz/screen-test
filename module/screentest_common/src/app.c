@@ -127,10 +127,11 @@ static uint8_t screentest_main(struct light_application *app)
                 static const char *const gesture_name[] = {
                         "none", "swipe up", "swipe down", "swipe left", "swipe right"
                 };
-                light_info("gesture: %s from (%d,%d) to (%d,%d)",
+                light_info("gesture: %s from (%d,%d) to (%d,%d) [%s]",
                                 gesture_name[gesture.type],
                                 gesture.start_x, gesture.start_y,
-                                gesture.end_x, gesture.end_y);
+                                gesture.end_x, gesture.end_y,
+                                gesture.from_hardware ? "hardware" : "software");
         }
 
         // the buffer we're about to swap into is the one that was in flight two frames
