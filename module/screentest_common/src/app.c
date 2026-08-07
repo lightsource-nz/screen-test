@@ -20,10 +20,17 @@ struct touch_device *_touch_main;
 static bool touch_was_active;
 static bool touch_anim_active;
 static uint16_t touch_anim_x, touch_anim_y, touch_anim_radius;
-// whether a ripple was drawn into the frame that is currently on the panel. the frame
-// after a ripple ends still has to repaint where it used to be in order to erase it, so
-// the update region has to keep covering it for one frame longer than it is drawn
-static bool touch_anim_on_panel;
+
+// bounding box of everything drawn into the frame currently on the panel. each update has
+// to cover this as well as its own content: whatever was drawn last frame and ISN'T drawn
+// again this frame still has to be repainted, or it stays on the panel forever. the buffer
+// is fully cleared and redrawn every frame, so it is only ever the panel that goes stale.
+//
+// tracking the real previous box matters as soon as content MOVES -- a second touch
+// relocates the ripple mid-animation, and covering only its new position strands the old
+// one on screen indefinitely
+static int32_t panel_bx0, panel_by0, panel_bx1, panel_by1;
+static bool panel_box_valid;
 
 // grows an accumulating bounding box to cover a circle. signed, because a circle near an
 // edge extends past it and rend_point2d's uint16_t would wrap instead of clipping
@@ -137,18 +144,30 @@ static uint8_t screentest_main(struct light_application *app)
                 }
 
                 // the whole buffer was cleared and redrawn above, but the only pixels that
-                // can actually differ from what the panel already shows are the two
-                // animated circles -- so only a box covering those is pushed. the circles'
-                // MAX radii are used rather than their current ones, since the region also
-                // has to cover erasing whatever was drawn in the previous frame
-                int32_t bx0 = INT32_MAX, by0 = INT32_MAX, bx1 = INT32_MIN, by1 = INT32_MIN;
+                // can differ from what the panel already shows are the animated circles --
+                // so only a box covering those is pushed. their MAX radii are used rather
+                // than their current ones, so a shrinking circle still erases its own
+                // previous extent
+                int32_t cx0 = INT32_MAX, cy0 = INT32_MAX, cx1 = INT32_MIN, cy1 = INT32_MIN;
                 _bbox_add_circle(ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y, 2 * seq_wrap,
-                                &bx0, &by0, &bx1, &by1);
-                if(ripple_drawn || touch_anim_on_panel) {
+                                &cx0, &cy0, &cx1, &cy1);
+                if(ripple_drawn) {
                         _bbox_add_circle(touch_anim_x, touch_anim_y, TOUCH_ANIM_MAX_RADIUS,
-                                        &bx0, &by0, &bx1, &by1);
+                                        &cx0, &cy0, &cx1, &cy1);
                 }
-                touch_anim_on_panel = ripple_drawn;
+
+                // push this frame's content UNION the previous frame's, so anything that
+                // stopped being drawn -- or moved -- gets erased where it used to be
+                int32_t bx0 = cx0, by0 = cy0, bx1 = cx1, by1 = cy1;
+                if(panel_box_valid) {
+                        if(panel_bx0 < bx0) bx0 = panel_bx0;
+                        if(panel_by0 < by0) by0 = panel_by0;
+                        if(panel_bx1 > bx1) bx1 = panel_bx1;
+                        if(panel_by1 > by1) by1 = panel_by1;
+                }
+                panel_bx0 = cx0; panel_by0 = cy0;
+                panel_bx1 = cx1; panel_by1 = cy1;
+                panel_box_valid = true;
 
                 if(bx0 < 0) bx0 = 0;
                 if(by0 < 0) by0 = 0;
