@@ -30,6 +30,24 @@ static bool slide_active;
 static int32_t panel_bx0, panel_by0, panel_bx1, panel_by1;
 static bool panel_box_valid;
 
+// clamps a box to the canvas and pushes it to every display. signed in, because a box
+// covering a circle near an edge extends past it, and rend_point2d's uint16_t would wrap
+// rather than clip
+static void _push_region(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
+{
+        if(x0 < 0) x0 = 0;
+        if(y0 < 0) y0 = 0;
+        if(x1 > (int32_t)render->dim_x - 1) x1 = render->dim_x - 1;
+        if(y1 > (int32_t)render->dim_y - 1) y1 = render->dim_y - 1;
+        if(x1 < x0 || y1 < y0)
+                return;
+
+        for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
+                light_display_command_update_region_async(_display[i],
+                        (rend_point2d) {(uint16_t)x0, (uint16_t)y0},
+                        (rend_point2d) {(uint16_t)x1, (uint16_t)y1});
+        }
+}
 // grows an accumulating bounding box to cover a circle. signed, because a circle near an
 // edge extends past it and rend_point2d's uint16_t would wrap instead of clipping
 static void _bbox_add_circle(int32_t cx, int32_t cy, int32_t r,
@@ -202,29 +220,39 @@ static uint8_t screentest_main(struct light_application *app)
                 _bbox_add_circle(circle_x, circle_y, ST_CIRCLE_MAX_RADIUS,
                                 &cx0, &cy0, &cx1, &cy1);
 
-                // push this frame's content UNION the previous frame's, so anything that
-                // stopped being drawn -- or moved -- gets erased where it used to be
-                int32_t bx0 = cx0, by0 = cy0, bx1 = cx1, by1 = cy1;
-                if(panel_box_valid) {
-                        if(panel_bx0 < bx0) bx0 = panel_bx0;
-                        if(panel_by0 < by0) by0 = panel_by0;
-                        if(panel_bx1 > bx1) bx1 = panel_bx1;
-                        if(panel_by1 > by1) by1 = panel_by1;
+                // this frame's content still has to be pushed along with the previous
+                // frame's, so whatever moved gets erased where it used to be. usually the
+                // two boxes overlap (the circle creeps a pixel or two per frame) and their
+                // union is barely larger than either, so one push is cheapest.
+                //
+                // at a wrap they don't overlap at all: the circle is at opposite edges in
+                // consecutive frames, and their union is nearly the whole canvas -- almost
+                // all of it unchanged pixels. worse, a tall narrow union is the shape
+                // drivers chunk row-by-row, so it costs a poll per row. pushing the two
+                // boxes separately is dramatically less work whenever they're disjoint
+                bool overlap = panel_box_valid
+                                && cx1 >= panel_bx0 && cx0 <= panel_bx1
+                                && cy1 >= panel_by0 && cy0 <= panel_by1;
+                if(!panel_box_valid || overlap) {
+                        int32_t bx0 = cx0, by0 = cy0, bx1 = cx1, by1 = cy1;
+                        if(panel_box_valid) {
+                                if(panel_bx0 < bx0) bx0 = panel_bx0;
+                                if(panel_by0 < by0) by0 = panel_by0;
+                                if(panel_bx1 > bx1) bx1 = panel_bx1;
+                                if(panel_by1 > by1) by1 = panel_by1;
+                        }
+                        _push_region(bx0, by0, bx1, by1);
+                } else {
+                        // erase where it was, then draw where it is. both read the same
+                        // already-complete buffer, so the order is immaterial -- though the
+                        // second push does wait out the first, since starting an update
+                        // drains any still in flight
+                        _push_region(panel_bx0, panel_by0, panel_bx1, panel_by1);
+                        _push_region(cx0, cy0, cx1, cy1);
                 }
                 panel_bx0 = cx0; panel_by0 = cy0;
                 panel_bx1 = cx1; panel_by1 = cy1;
                 panel_box_valid = true;
-
-                if(bx0 < 0) bx0 = 0;
-                if(by0 < 0) by0 = 0;
-                if(bx1 > (int32_t)render->dim_x - 1) bx1 = render->dim_x - 1;
-                if(by1 > (int32_t)render->dim_y - 1) by1 = render->dim_y - 1;
-
-                for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
-                        light_display_command_update_region_async(_display[i],
-                                (rend_point2d) {(uint16_t)bx0, (uint16_t)by0},
-                                (rend_point2d) {(uint16_t)bx1, (uint16_t)by1});
-                }
         }
 
         last_run = now;
