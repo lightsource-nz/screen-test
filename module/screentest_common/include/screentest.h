@@ -47,12 +47,6 @@
 #define ST_SWIPE_MOVE_DISTANCE          40
 #define ST_SWIPE_MOVE_MS                400
 
-#define ST_DISPLAY_1_PIN_CS             17
-#define ST_DISPLAY_1_PIN_DC             16
-#define ST_DISPLAY_1_PIN_SCK            18
-#define ST_DISPLAY_1_PIN_TX             19
-#define ST_DISPLAY_1_PIN_RESET          20
-
 extern struct display_device *_display[ST_DISPLAY_COUNT];
 // NULL on boards with no touch hardware -- __screentest_hardware_init() only assigns
 // this on the one board that has a touch device (screentest_ws_touch169); everywhere
