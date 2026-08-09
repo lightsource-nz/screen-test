@@ -32,7 +32,7 @@
 extern struct display_device *_display[ST_UI_DISPLAY_COUNT];
 extern struct ui_context *_ui;
 
-// --- provided by screentest_ui_common, referenced by each app's Light_Application_Define ---
+// --- provided by light_ui_common, referenced by each app's Light_Application_Define ---
 // the module dependency list has to name the input modules the board actually has
 // (light_button, light_touch, or neither), so each app owns its own application define and
 // main(); everything else about the demo is shared

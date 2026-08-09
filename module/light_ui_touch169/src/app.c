@@ -5,11 +5,14 @@
 #include <module/mod_light_ui.h>
 #include <TypeLightSans_ttf_16px_font.h>
 
-// app: screentest_ui_touch169
+// app: light_ui_touch169
 // the shared light_ui demo on the RP2350-Touch-LCD-1.69, driven by tapping buttons
 // directly. no push-buttons and no light_button dependency -- this is the other half of the
 // pair, proving the same widget tree works from either input path
 
+// the application keeps the screentest_ui name even though the target is light_ui_touch169:
+// Light_Application_Define() registers a light_module under whatever name it is given, and
+// a second module called light_ui would collide with the real one in the dependency graph
 Light_Application_Define(screentest_ui, screentest_ui_event, screentest_ui_main,
                                 &rend,
                                 &light_display,

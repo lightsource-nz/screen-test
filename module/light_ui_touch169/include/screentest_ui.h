@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-// this header shadows screentest_ui_common's entirely, so everything the shared demo reads
+// this header shadows light_ui_common's entirely, so everything the shared demo reads
 // has to be repeated here rather than inherited -- same convention as screentest.h
 
 #define ST_UI_VERSION_STR               "0.1.0"

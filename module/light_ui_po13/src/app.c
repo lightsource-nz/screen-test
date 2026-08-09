@@ -6,7 +6,7 @@
 #include <module/mod_light_ui.h>
 #include <TypeLightSans_ttf_8px_font.h>
 
-// app: screentest_ui_po13
+// app: light_ui_po13
 // the shared light_ui demo on the Pico-OLED-1.3, navigated with the board's two onboard
 // keys: KEY0 cycles focus through the buttons, KEY1 activates the focused one.
 //
@@ -14,9 +14,12 @@
 // CS line is GP17, which is also KEY1 (see screentest_hw_po13.h). the board can drive the
 // second panel or read the second key, not both -- and this app is the one that needs keys
 //
-// no screentest_ui.h of its own: screentest_ui_common's defaults (64x128, 1bpp,
+// no screentest_ui.h of its own: light_ui_common's defaults (64x128, 1bpp,
 // REND_ROTATE_90, one display) are already this board's real geometry
 
+// the application keeps the screentest_ui name even though the target is light_ui_po13:
+// Light_Application_Define() registers a light_module under whatever name it is given, and
+// a second module called light_ui would collide with the real one in the dependency graph
 Light_Application_Define(screentest_ui, screentest_ui_event, screentest_ui_main,
                                 &rend,
                                 &light_display,

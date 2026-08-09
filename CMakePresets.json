@@ -74,9 +74,9 @@
             "targets": ["screentest_po13"]
         },
         {
-            "name": "build-screentest_ui_po13-debug",
+            "name": "build-light_ui_po13-debug",
             "configurePreset": "conf-screentest-debug",
-            "targets": ["screentest_ui_po13"]
+            "targets": ["light_ui_po13"]
         },
         {
             "name": "build-screentest-waveshare-touch169-debug",
@@ -84,9 +84,9 @@
             "targets": ["screentest_ws_touch169"]
         },
         {
-            "name": "build-screentest_ui_touch169-debug",
+            "name": "build-light_ui_touch169-debug",
             "configurePreset": "conf-screentest-waveshare-touch169-debug",
-            "targets": ["screentest_ui_touch169"]
+            "targets": ["light_ui_touch169"]
         },
         {
             "name": "build-screentest-trace",
