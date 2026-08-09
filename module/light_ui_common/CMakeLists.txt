@@ -15,6 +15,7 @@ target_sources(
 # and each app names its own in its Light_Application_Define
 target_link_libraries(
         light_ui_common INTERFACE
+        light_canvas
         light_ui
         light_display
         rend

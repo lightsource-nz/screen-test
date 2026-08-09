@@ -1,11 +1,14 @@
 #include <screentest.h>
+#include <light_canvas.h>
 #include <light_platform.h>
+#include <module/mod_light_canvas.h>
 #include <module/mod_light_display.h>
 #include <module/mod_light_touch.h>
 
 #include "screentest_internal.h"
 
 static struct rend_context *render;
+static struct canvas_context *canvas;
 struct display_device *_display[ST_DISPLAY_COUNT];
 struct touch_device *_touch_main;
 
@@ -20,61 +23,35 @@ static int32_t slide_delta_x, slide_delta_y;
 static uint32_t slide_start_ms;
 static bool slide_active;
 
-// bounding box of everything drawn into the frame currently on the panel. each update has
-// to cover this as well as its own content: whatever was drawn last frame and ISN'T drawn
-// again this frame still has to be repainted, or it stays on the panel forever. the buffer
-// is fully cleared and redrawn every frame, so it is only ever the panel that goes stale.
+// the box the circle occupies, at its MAXIMUM radius rather than its current one, so a
+// shrinking circle still invalidates its own previous extent. signed, because a circle near
+// an edge extends past it and rend_point2d's uint16_t would wrap instead of clipping --
+// light_canvas takes signed regions for exactly this reason and clips them itself.
 //
-// tracking the real previous box matters precisely because the circle MOVES: covering only
-// where it is now would strand where it just was
-static int32_t panel_bx0, panel_by0, panel_bx1, panel_by1;
-static bool panel_box_valid;
-
-// clamps a box to the canvas and pushes it to every display. signed in, because a box
-// covering a circle near an edge extends past it, and rend_point2d's uint16_t would wrap
-// rather than clip
-static void _push_region(int32_t x0, int32_t y0, int32_t x1, int32_t y1)
+// only where the circle is NOW: light_canvas re-invalidates whatever the previous frame
+// pushed, which is where the circle just was, so the area it vacated is covered without
+// this having to track it
+static struct canvas_region _circle_region(int32_t cx, int32_t cy)
 {
-        if(x0 < 0) x0 = 0;
-        if(y0 < 0) y0 = 0;
-        if(x1 > (int32_t)render->dim_x - 1) x1 = render->dim_x - 1;
-        if(y1 > (int32_t)render->dim_y - 1) y1 = render->dim_y - 1;
-        if(x1 < x0 || y1 < y0)
-                return;
-
-        for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
-                light_display_command_update_region_async(_display[i],
-                        (rend_point2d) {(uint16_t)x0, (uint16_t)y0},
-                        (rend_point2d) {(uint16_t)x1, (uint16_t)y1});
-        }
-}
-// grows an accumulating bounding box to cover a circle. signed, because a circle near an
-// edge extends past it and rend_point2d's uint16_t would wrap instead of clipping
-static void _bbox_add_circle(int32_t cx, int32_t cy, int32_t r,
-                        int32_t *x0, int32_t *y0, int32_t *x1, int32_t *y1)
-{
-        if(cx - r < *x0) *x0 = cx - r;
-        if(cy - r < *y0) *y0 = cy - r;
-        if(cx + r > *x1) *x1 = cx + r;
-        if(cy + r > *y1) *y1 = cy + r;
+        return (struct canvas_region) {
+                (int16_t)(cx - ST_CIRCLE_MAX_RADIUS), (int16_t)(cy - ST_CIRCLE_MAX_RADIUS),
+                (int16_t)(cx + ST_CIRCLE_MAX_RADIUS), (int16_t)(cy + ST_CIRCLE_MAX_RADIUS)
+        };
 }
 
 static void screentest_event(const struct light_module *module, uint8_t event, void *arg);
 static uint8_t screentest_main(struct light_application *app);
-static void screentest_set_frame_rate(uint32_t frame_rate);
 
 void __screentest_hardware_init();
 
 Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
+                                &light_canvas,
                                 &light_display,
                                 &light_touch,
                                 &light_core);
 
 static uint32_t last_run;
-static uint32_t next_frame;
-static uint32_t frame_interval_ms;
-static uint32_t frame_counter;
 
 // radius of the animated test circle at a given moment: grows from 1px to
 // ST_CIRCLE_MAX_RADIUS at ST_CIRCLE_GROWTH_PX_PER_S, then restarts.
@@ -159,15 +136,18 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
                 render = rend_context_create(
                         "screentest_render_main", ST_RENDER_WIDTH, ST_RENDER_HEIGHT, ST_RENDER_BPP);
                 rend_context_set_rotation(render, ST_RENDER_ROTATION);
-                rend_context_enable_double_buffer(render);
                 render->point_radius = 2;
-                frame_counter = 0;
-                screentest_set_frame_rate(ST_FRAME_RATE);
                 light_debug("passing control to display hardware setup function","");
                 __screentest_hardware_init();
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
                         light_display_set_render_context(_display[i], render);
                 }
+                // frame pacing, double buffering and region flushing all live here now --
+                // the canvas has to be created after the displays exist, since it presents
+                // onto them
+                canvas = light_canvas_create(render, _display, ST_DISPLAY_COUNT);
+                light_canvas_enable_double_buffer(canvas);
+                light_canvas_set_frame_rate(canvas, ST_FRAME_RATE);
                 light_info("display pipeline setup complete");
         break;
         // TODO implement unregister for event hooks
@@ -198,69 +178,19 @@ static uint8_t screentest_main(struct light_application *app)
         }
         _advance_slide(now);
 
-        // the buffer we're about to swap into is the one that was in flight two frames
-        // ago -- if some device is still flushing from it, wait rather than start
-        // drawing over data a DMA transfer is still reading (see
-        // rend_context_swap_buffers()/light_display_render_context_busy())
-        if(now >= next_frame && !light_display_render_context_busy(render)) {
-                next_frame += frame_interval_ms;
-                frame_counter++;
-                rend_context_swap_buffers(render);
-                rend_draw_clear(render);
-//              rend_draw_point(display->render_ctx, (rend_point2d) {ST_RENDER_CIRCLE_X, ST_RENDER_CIRCLE_Y});
+        // the canvas owns the frame deadline, the buffer swap and the check for a display
+        // still reading the buffer -- on false there is simply nothing to do this tick
+        if(light_canvas_frame_begin(canvas)) {
                 rend_draw_circle(render, (rend_point2d) {(uint16_t)circle_x, (uint16_t)circle_y},
                                 _circle_radius(now), true);
-//              rend_debug_buffer_print_stdout(display->render_ctx);
-
-                // the whole buffer was cleared and redrawn above, but the only pixels that
-                // can differ from what the panel already shows are the circle's -- so only
-                // a box covering it is pushed. its MAX radius is used rather than its
-                // current one, so a shrinking circle still erases its own previous extent
-                int32_t cx0 = INT32_MAX, cy0 = INT32_MAX, cx1 = INT32_MIN, cy1 = INT32_MIN;
-                _bbox_add_circle(circle_x, circle_y, ST_CIRCLE_MAX_RADIUS,
-                                &cx0, &cy0, &cx1, &cy1);
-
-                // this frame's content still has to be pushed along with the previous
-                // frame's, so whatever moved gets erased where it used to be. usually the
-                // two boxes overlap (the circle creeps a pixel or two per frame) and their
-                // union is barely larger than either, so one push is cheapest.
-                //
-                // at a wrap they don't overlap at all: the circle is at opposite edges in
-                // consecutive frames, and their union is nearly the whole canvas -- almost
-                // all of it unchanged pixels. worse, a tall narrow union is the shape
-                // drivers chunk row-by-row, so it costs a poll per row. pushing the two
-                // boxes separately is dramatically less work whenever they're disjoint
-                bool overlap = panel_box_valid
-                                && cx1 >= panel_bx0 && cx0 <= panel_bx1
-                                && cy1 >= panel_by0 && cy0 <= panel_by1;
-                if(!panel_box_valid || overlap) {
-                        int32_t bx0 = cx0, by0 = cy0, bx1 = cx1, by1 = cy1;
-                        if(panel_box_valid) {
-                                if(panel_bx0 < bx0) bx0 = panel_bx0;
-                                if(panel_by0 < by0) by0 = panel_by0;
-                                if(panel_bx1 > bx1) bx1 = panel_bx1;
-                                if(panel_by1 > by1) by1 = panel_by1;
-                        }
-                        _push_region(bx0, by0, bx1, by1);
-                } else {
-                        // erase where it was, then draw where it is. both read the same
-                        // already-complete buffer, so the order is immaterial -- though the
-                        // second push does wait out the first, since starting an update
-                        // drains any still in flight
-                        _push_region(panel_bx0, panel_by0, panel_bx1, panel_by1);
-                        _push_region(cx0, cy0, cx1, cy1);
-                }
-                panel_bx0 = cx0; panel_by0 = cy0;
-                panel_bx1 = cx1; panel_by1 = cy1;
-                panel_box_valid = true;
+                // the whole buffer was cleared and redrawn, but the only pixels that can
+                // differ from what the panel already shows are the circle's, so only a box
+                // covering it is invalidated. where it was last frame is covered by the
+                // canvas carrying the previous frame's regions forward
+                light_canvas_invalidate_rect(canvas, _circle_region(circle_x, circle_y));
+                light_canvas_frame_end(canvas);
         }
 
         last_run = now;
         return LF_STATUS_RUN;
-}
-
-static void screentest_set_frame_rate(uint32_t frame_rate)
-{
-        if(frame_rate > 0)
-                frame_interval_ms = 1000 / frame_rate;
 }

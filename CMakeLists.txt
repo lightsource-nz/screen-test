@@ -51,7 +51,7 @@ add_subdirectory(module/light_touch_cst816t)
 # exist. resolve each from module/<name> if it's there (which is where `git submodule add`
 # will put it, so converting them later needs no change here) and otherwise from a sibling
 # checkout, the same way LIGHT_PATH and FONT_CRUSHER_PATH already resolve theirs
-foreach(_ext_module light_button light_ui)
+foreach(_ext_module light_button light_canvas light_ui)
         string(TOUPPER ${_ext_module} _ext_var)
         if(NOT ${_ext_var}_PATH)
                 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/module/${_ext_module}/CMakeLists.txt")

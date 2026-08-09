@@ -1,5 +1,5 @@
 #include <screentest_ui.h>
-#include <light_platform.h>
+#include <light_canvas.h>
 
 #include <stdint.h>
 
@@ -26,8 +26,7 @@ static bool _toggled[ST_UI_BUTTON_COUNT];
 static struct ui_button *_button[ST_UI_BUTTON_COUNT];
 
 static struct rend_context *render;
-static uint32_t next_frame;
-static uint32_t frame_interval_ms;
+static struct canvas_context *canvas;
 
 static void _on_press(struct ui_button *btn, void *user_data)
 {
@@ -67,16 +66,19 @@ void screentest_ui_event(const struct light_module *module, uint8_t event, void 
                 // char_height off the context to lay out and truncate labels, and
                 // rend_draw_text() is a silent no-op with no font set
                 rend_context_set_font(render, __screentest_ui_font());
-                rend_context_enable_double_buffer(render);
-                if(ST_UI_FRAME_RATE > 0)
-                        frame_interval_ms = 1000 / ST_UI_FRAME_RATE;
 
                 light_debug("passing control to board hardware setup function","");
                 __screentest_ui_hardware_init();
                 for(uint8_t i = 0; i < ST_UI_DISPLAY_COUNT; i++)
                         light_display_set_render_context(_display[i], render);
 
-                _ui = light_ui_create_context(render, _display, ST_UI_DISPLAY_COUNT);
+                // frame pacing, double buffering and region flushing live in the canvas;
+                // light_ui contributes only the widget tree and what changed in it
+                canvas = light_canvas_create(render, _display, ST_UI_DISPLAY_COUNT);
+                light_canvas_enable_double_buffer(canvas);
+                light_canvas_set_frame_rate(canvas, ST_UI_FRAME_RATE);
+
+                _ui = light_ui_create_context(canvas);
                 _build_ui();
                 // nothing on the panel matches the freshly built tree yet, so the first
                 // frame has to push the whole canvas rather than just what changed
@@ -91,19 +93,15 @@ void screentest_ui_event(const struct light_module *module, uint8_t event, void 
 
 uint8_t screentest_ui_main(struct light_application *app)
 {
-        uint32_t now = light_platform_get_time_since_init();
-
         // every tick, not once per frame: the input modules' own periodic tasks run
         // independently of this app's frame rate and hold only one event at a time, so
         // collecting at frame rate could drop one
         __screentest_ui_input_poll();
 
-        if(now >= next_frame) {
-                // set forward from now rather than accumulated, so a long stall doesn't
-                // leave a backlog of frame deadlines to burn through
-                next_frame = now + frame_interval_ms;
-                light_ui_render(_ui);
-        }
+        // also every tick -- the canvas's own pacing decides when a frame actually happens,
+        // and light_ui_render() is a no-op on the ticks in between (and on any tick where
+        // nothing in the tree changed)
+        light_ui_render(_ui);
 
         return LF_STATUS_RUN;
 }
