@@ -10,10 +10,10 @@
 // directly. no push-buttons and no light_button dependency -- this is the other half of the
 // pair, proving the same widget tree works from either input path
 
-// the application keeps the screentest_ui name even though the target is light_ui_touch169:
-// Light_Application_Define() registers a light_module under whatever name it is given, and
-// a second module called light_ui would collide with the real one in the dependency graph
-Light_Application_Define(screentest_ui, screentest_ui_event, screentest_ui_main,
+// named per-app rather than after the shared demo: this define lives in each app precisely
+// so it can name its own dependencies, and the name it gives the application is what
+// light_module_get_name() reports in the log, so it should say which binary is running
+Light_Application_Define(light_ui_touch169, screentest_ui_event, screentest_ui_main,
                                 &rend,
                                 &light_display,
                                 &light_ui,

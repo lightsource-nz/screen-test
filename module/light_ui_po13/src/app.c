@@ -17,10 +17,10 @@
 // no screentest_ui.h of its own: light_ui_common's defaults (64x128, 1bpp,
 // REND_ROTATE_90, one display) are already this board's real geometry
 
-// the application keeps the screentest_ui name even though the target is light_ui_po13:
-// Light_Application_Define() registers a light_module under whatever name it is given, and
-// a second module called light_ui would collide with the real one in the dependency graph
-Light_Application_Define(screentest_ui, screentest_ui_event, screentest_ui_main,
+// named per-app rather than after the shared demo: this define lives in each app precisely
+// so it can name its own dependencies, and the name it gives the application is what
+// light_module_get_name() reports in the log, so it should say which binary is running
+Light_Application_Define(light_ui_po13, screentest_ui_event, screentest_ui_main,
                                 &rend,
                                 &light_display,
                                 &light_ui,
