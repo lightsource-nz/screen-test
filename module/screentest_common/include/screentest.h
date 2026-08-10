@@ -58,16 +58,18 @@
 // tilt time -- otherwise the circle lurches across the canvas in one step
 #define ST_TILT_MAX_STEP_MS             250
 
-// which IMU axis steers which canvas axis. a board WITH an imu overrides these from its own
-// hardware header, where the mounting is known; these fallbacks exist so the shared demo
-// still compiles for boards without one, where _imu_main is NULL and the tilt path is
-// skipped entirely
-#ifndef ST_IMU_TILT_X_AXIS
+// which IMU axis steers which canvas axis. NOT board-specific: light_imu already rotates
+// every sample into the device frame using the board's own axis map, so by the time the demo
+// sees it, +X is right across the display and +Y is up it whatever the mounting.
+//
+// what remains is the relationship between that frame and the canvas, which is fixed. a ball
+// rolls toward whichever edge is lowered, i.e. AGAINST the accelerometer reading on that
+// axis -- hence the negation on X. Y escapes it only because canvas Y grows DOWNWARD while
+// device Y points up, and the two negations cancel
 #define ST_IMU_TILT_X_AXIS              IMU_AXIS_X
-#define ST_IMU_TILT_X_SIGN              1
+#define ST_IMU_TILT_X_SIGN              (-1)
 #define ST_IMU_TILT_Y_AXIS              IMU_AXIS_Y
-#define ST_IMU_TILT_Y_SIGN              (-1)
-#endif
+#define ST_IMU_TILT_Y_SIGN              1
 
 extern struct display_device *_display[ST_DISPLAY_COUNT];
 // NULL on boards with no touch hardware -- __screentest_hardware_init() only assigns

@@ -42,18 +42,25 @@
 #define ST_IMU_PIN_INT1                 23
 #define ST_IMU_PIN_INT2                 24
 
-// how the IMU's axes map onto the render canvas for tilt steering. which accel axis points
-// which way on the glass is a board-MOUNTING fact, not a driver one, so it lives here where
-// a single edit corrects it -- the same treatment the display's row offset needed.
+// how this board mounts the QMI8658C, as the axis map light_imu rotates every sample
+// through (see struct imu_axis_map). a board-MOUNTING fact rather than a driver one, so it
+// lives here where a single edit corrects it -- the same treatment the display's row offset
+// needed. declaring it once means BOTH orientation reporting and tilt steering come out
+// right, instead of each compensating separately.
 //
-// TO BE CONFIRMED ON HARDWARE: the starting guess is that the chip's X axis runs along the
-// canvas X axis and its Y axis along canvas Y, with Y inverted because accelerometer Y
-// points up out of the board while canvas Y grows downward. if the circle steers along the
-// wrong axis, swap the AXIS values; if it steers backwards, flip the corresponding SIGN
-#define ST_IMU_TILT_X_AXIS              IMU_AXIS_X
-#define ST_IMU_TILT_X_SIGN              1
-#define ST_IMU_TILT_Y_AXIS              IMU_AXIS_Y
-#define ST_IMU_TILT_Y_SIGN              (-1)
+// CONFIRMED ON HARDWARE, using the convention that an accelerometer axis pointing UP reads
+// +1g. three observations fix all three axes:
+//   - lowering the right edge drove the circle DOWN, so the chip's +Y points right
+//   - lowering the bottom edge drove it RIGHT, so the chip's +X points up the screen
+//   - face-up was reported as face-down, so the chip's +Z points INTO the screen
+// the X/Y transposition and the Z inversion corroborate each other: transposing two axes
+// alone would flip handedness, which no physical mounting can do, and negating the third
+// restores it. so this is a real rotation, not two independent guesses that happen to fit
+#define ST_IMU_AXIS_MAP \
+        ((struct imu_axis_map) { \
+                .source = { IMU_AXIS_Y, IMU_AXIS_X, IMU_AXIS_Z }, \
+                .sign = { 1, 1, -1 } \
+        })
 
 extern struct display_device *screentest_hw_ws_touch169_display(void);
 extern struct touch_device *screentest_hw_ws_touch169_touch(void);

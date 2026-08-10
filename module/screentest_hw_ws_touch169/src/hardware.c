@@ -79,6 +79,11 @@ struct imu_device *screentest_hw_ws_touch169_imu(void)
         struct imu_device *imu = light_imu_qmi8658_create_device(
                 "screentest_imu_main", io, ST_IMU_PIN_INT1);
 
+        // declare the mounting before anything reads a sample, so orientation is classified
+        // in the device frame from the very first poll rather than settling wrong and then
+        // being corrected
+        light_imu_set_axis_map(imu, ST_IMU_AXIS_MAP);
+
         light_info("imu pipeline setup complete","");
         return imu;
 }
