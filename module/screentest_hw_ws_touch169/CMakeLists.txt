@@ -17,5 +17,7 @@ target_link_libraries(
         light_display_st7789
         light_touch
         light_touch_cst816t
+        light_imu
+        light_imu_qmi8658
         light_core
 )

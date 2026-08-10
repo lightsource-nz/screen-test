@@ -3,6 +3,7 @@
 
 #include <light.h>
 #include <light_display.h>
+#include <light_imu.h>
 #include <light_touch.h>
 
 #include <stdint.h>
@@ -47,12 +48,35 @@
 #define ST_SWIPE_MOVE_DISTANCE          40
 #define ST_SWIPE_MOVE_MS                400
 
+// tilt steering: how far the board must be tilted before the circle starts moving, and how
+// fast it travels at full tilt. the deadzone matters more than it looks -- a board lying
+// flat still reads tens of mg of noise on the horizontal axes, and without it the circle
+// creeps continuously
+#define ST_TILT_DEADZONE_MG             120
+#define ST_TILT_MAX_SPEED_PX_PER_S      120
+// a gap longer than this (a stall, or the first tick after boot) is not treated as elapsed
+// tilt time -- otherwise the circle lurches across the canvas in one step
+#define ST_TILT_MAX_STEP_MS             250
+
+// which IMU axis steers which canvas axis. a board WITH an imu overrides these from its own
+// hardware header, where the mounting is known; these fallbacks exist so the shared demo
+// still compiles for boards without one, where _imu_main is NULL and the tilt path is
+// skipped entirely
+#ifndef ST_IMU_TILT_X_AXIS
+#define ST_IMU_TILT_X_AXIS              IMU_AXIS_X
+#define ST_IMU_TILT_X_SIGN              1
+#define ST_IMU_TILT_Y_AXIS              IMU_AXIS_Y
+#define ST_IMU_TILT_Y_SIGN              (-1)
+#endif
+
 extern struct display_device *_display[ST_DISPLAY_COUNT];
 // NULL on boards with no touch hardware -- __screentest_hardware_init() only assigns
 // this on the one board that has a touch device (screentest_ws_touch169); everywhere
 // else it stays unset (zero-initialized), and the touch-triggered animation in app.c
 // is a no-op whenever it's NULL
 extern struct touch_device *_touch_main;
+// NULL on boards with no IMU, on exactly the same terms as _touch_main above
+extern struct imu_device *_imu_main;
 
 extern void __screentest_hardware_init();
 

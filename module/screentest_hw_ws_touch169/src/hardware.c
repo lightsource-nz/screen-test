@@ -1,5 +1,6 @@
 #include <screentest_hw_ws_touch169.h>
 #include <light_display_st7789.h>
+#include <light_imu_qmi8658.h>
 #include <light_touch_cst816t.h>
 
 // board: Waveshare RP2350-Touch-LCD-1.69 -- ST7789 panel (240x280, 16bpp) plus a CST816T
@@ -61,4 +62,23 @@ struct touch_device *screentest_hw_ws_touch169_touch(void)
 
         light_info("touch pipeline setup complete","");
         return touch;
+}
+
+struct imu_device *screentest_hw_ws_touch169_imu(void)
+{
+        // its own io_context despite sharing the bus with the touch controller: an
+        // io_context carries the target's I2C address, and these two answer to different
+        // ones. setup_io_i2c re-inits the same peripheral, which is harmless as long as the
+        // scl/sda parameters agree -- and they do, being the same two pins.
+        //
+        // no reset line: the IMU has none of its own on this board, and pulsing the touch
+        // controller's out from under it would be actively wrong, hence PIN_NONE
+        struct io_context *io = light_ioport_setup_io_i2c(
+                PORT_I2C_1, LIGHT_IOPORT_PIN_NONE, QMI8658_I2C_ADDR,
+                ST_TOUCH_PIN_SCL, ST_TOUCH_PIN_SDA);
+        struct imu_device *imu = light_imu_qmi8658_create_device(
+                "screentest_imu_main", io, ST_IMU_PIN_INT1);
+
+        light_info("imu pipeline setup complete","");
+        return imu;
 }

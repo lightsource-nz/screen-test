@@ -2,6 +2,7 @@
 #define _SCREENTEST_HW_WS_TOUCH169_H
 
 #include <light_display.h>
+#include <light_imu.h>
 #include <light_touch.h>
 
 // board wiring and device construction for the Waveshare RP2350-Touch-LCD-1.69, factored
@@ -35,7 +36,27 @@
 #define ST_TOUCH_X_MAX                  ST_DISPLAY_WIDTH
 #define ST_TOUCH_Y_MAX                  ST_DISPLAY_HEIGHT
 
+// QMI8658C 6-axis IMU -- same shared I2C1 bus as the touch controller, at its own address.
+// INT1/INT2 confirmed from the board's schematic + wiki pin table; INT1 is passed to the
+// driver but not yet used to gate sampling (see light_imu_qmi8658.h)
+#define ST_IMU_PIN_INT1                 23
+#define ST_IMU_PIN_INT2                 24
+
+// how the IMU's axes map onto the render canvas for tilt steering. which accel axis points
+// which way on the glass is a board-MOUNTING fact, not a driver one, so it lives here where
+// a single edit corrects it -- the same treatment the display's row offset needed.
+//
+// TO BE CONFIRMED ON HARDWARE: the starting guess is that the chip's X axis runs along the
+// canvas X axis and its Y axis along canvas Y, with Y inverted because accelerometer Y
+// points up out of the board while canvas Y grows downward. if the circle steers along the
+// wrong axis, swap the AXIS values; if it steers backwards, flip the corresponding SIGN
+#define ST_IMU_TILT_X_AXIS              IMU_AXIS_X
+#define ST_IMU_TILT_X_SIGN              1
+#define ST_IMU_TILT_Y_AXIS              IMU_AXIS_Y
+#define ST_IMU_TILT_Y_SIGN              (-1)
+
 extern struct display_device *screentest_hw_ws_touch169_display(void);
 extern struct touch_device *screentest_hw_ws_touch169_touch(void);
+extern struct imu_device *screentest_hw_ws_touch169_imu(void);
 
 #endif

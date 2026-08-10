@@ -3,6 +3,7 @@
 #include <light_platform.h>
 #include <module/mod_light_canvas.h>
 #include <module/mod_light_display.h>
+#include <module/mod_light_imu.h>
 #include <module/mod_light_touch.h>
 
 #include "screentest_internal.h"
@@ -11,6 +12,7 @@ static struct rend_context *render;
 static struct canvas_context *canvas;
 struct display_device *_display[ST_DISPLAY_COUNT];
 struct touch_device *_touch_main;
+struct imu_device *_imu_main;
 
 // where the animated circle currently sits, and the slide it's partway through. each swipe
 // starts a fresh slide of ST_SWIPE_MOVE_DISTANCE in the swiped direction, from wherever the
@@ -48,6 +50,7 @@ Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &rend,
                                 &light_canvas,
                                 &light_display,
+                                &light_imu,
                                 &light_touch,
                                 &light_core);
 
@@ -105,6 +108,63 @@ static void _advance_slide(uint32_t now)
                         render->dim_x);
         circle_y = _wrap(slide_from_y + (int32_t)(slide_delta_y * (int32_t)elapsed) / ST_SWIPE_MOVE_MS,
                         render->dim_y);
+}
+// speed along one axis for a given tilt, in pixels per second. ramps from zero at the edge
+// of the deadzone rather than jumping straight to a proportional speed, so the circle eases
+// into motion instead of snapping the moment the threshold is crossed
+static int32_t _tilt_velocity(int32_t accel_mg)
+{
+        int32_t magnitude = accel_mg < 0 ? -accel_mg : accel_mg;
+        if(magnitude <= ST_TILT_DEADZONE_MG)
+                return 0;
+
+        // 1000mg is a full 90 degree tilt of that axis into gravity, so that is what counts
+        // as "full deflection" -- clamped, since a shake can read well past 1g
+        int32_t over = magnitude - ST_TILT_DEADZONE_MG;
+        const int32_t span = 1000 - ST_TILT_DEADZONE_MG;
+        if(over > span)
+                over = span;
+
+        int32_t speed = (over * ST_TILT_MAX_SPEED_PX_PER_S) / span;
+        return accel_mg < 0 ? -speed : speed;
+}
+// steers the circle by tilting the board. driven off the clock for the same reason as the
+// slide above -- constant speed whatever the frame rate.
+//
+// suppressed while a slide is running: a slide sets an ABSOLUTE position from where it
+// began, so anything tilt contributed mid-slide would be overwritten on the next tick
+// anyway. swipe to fling, tilt to steer
+static uint32_t tilt_last_ms;
+// leftover sub-pixel motion, in milli-pixels. without this the whole feature stalls at low
+// tilt: at 30px/s a 10ms tick is 0.3px, which integer-divides to zero every single time, so
+// the circle would never move at all below a third of full speed
+static int32_t tilt_residue_x, tilt_residue_y;
+static void _advance_tilt(uint32_t now)
+{
+        uint32_t elapsed = now - tilt_last_ms;
+        tilt_last_ms = now;
+
+        if(!_imu_main || slide_active)
+                return;
+        // the first call after boot, or the tick after a long stall -- charging the whole
+        // gap as tilt time would fling the circle across the canvas in one step
+        if(!elapsed || elapsed > ST_TILT_MAX_STEP_MS)
+                return;
+
+        int32_t vx = ST_IMU_TILT_X_SIGN * _tilt_velocity(_imu_main->accel_mg[ST_IMU_TILT_X_AXIS]);
+        int32_t vy = ST_IMU_TILT_Y_SIGN * _tilt_velocity(_imu_main->accel_mg[ST_IMU_TILT_Y_AXIS]);
+
+        tilt_residue_x += vx * (int32_t)elapsed;
+        tilt_residue_y += vy * (int32_t)elapsed;
+        int32_t step_x = tilt_residue_x / 1000;
+        int32_t step_y = tilt_residue_y / 1000;
+        tilt_residue_x -= step_x * 1000;
+        tilt_residue_y -= step_y * 1000;
+
+        if(step_x)
+                circle_x = _wrap(circle_x + step_x, render->dim_x);
+        if(step_y)
+                circle_y = _wrap(circle_y + step_y, render->dim_y);
 }
 static uint16_t _circle_radius(uint32_t now)
 {
@@ -176,7 +236,25 @@ static uint8_t screentest_main(struct light_application *app)
                                 gesture.from_hardware ? "hardware" : "software");
                 _start_slide(gesture.type, now);
         }
+
+        // orientation changes are collected the same way gestures are, and for the same
+        // reason: light_imu holds one at a time, so checking every tick rather than once per
+        // frame keeps a change from being dropped
+        uint8_t orientation;
+        if(_imu_main && light_imu_take_orientation(_imu_main, &orientation)) {
+                static const char *const orientation_name[] = {
+                        "unknown", "portrait", "portrait-flipped",
+                        "landscape-left", "landscape-right", "face-up", "face-down"
+                };
+                light_info("orientation: %s (accel %d,%d,%d mg)",
+                                orientation_name[orientation],
+                                _imu_main->accel_mg[IMU_AXIS_X],
+                                _imu_main->accel_mg[IMU_AXIS_Y],
+                                _imu_main->accel_mg[IMU_AXIS_Z]);
+        }
+
         _advance_slide(now);
+        _advance_tilt(now);
 
         // the canvas owns the frame deadline, the buffer swap and the check for a display
         // still reading the buffer -- on false there is simply nothing to do this tick

@@ -41,8 +41,17 @@
 #define ST_SWIPE_MOVE_DISTANCE          40
 #define ST_SWIPE_MOVE_MS                400
 
+// tilt steering -- see screentest_common's screentest.h for what these control. the
+// ST_IMU_TILT_* axis mapping is NOT repeated here: it comes from
+// screentest_hw_ws_touch169.h, included above, because it describes how the chip is mounted
+// on this board rather than how the demo behaves
+#define ST_TILT_DEADZONE_MG             120
+#define ST_TILT_MAX_SPEED_PX_PER_S      120
+#define ST_TILT_MAX_STEP_MS             250
+
 extern struct display_device *_display[ST_DISPLAY_COUNT];
 extern struct touch_device *_touch_main;
+extern struct imu_device *_imu_main;
 
 extern void __screentest_hardware_init();
 
