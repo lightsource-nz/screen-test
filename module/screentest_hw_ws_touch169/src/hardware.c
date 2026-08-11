@@ -17,6 +17,10 @@ struct display_device *screentest_hw_ws_touch169_display(void)
                 PORT_SPI_1,
                 ST_DISPLAY_PIN_RESET, ST_DISPLAY_PIN_CS, ST_DISPLAY_PIN_DC,
                 ST_DISPLAY_PIN_SCK, ST_DISPLAY_PIN_MOSI);
+        // before the device is created, so even the initialisation sequence runs at the
+        // faster clock -- if the panel cannot take it, it fails visibly from the first
+        // frame rather than only once something animates
+        light_ioport_set_spi_clock(io, ST_DISPLAY_SPI_HZ);
         struct display_device *disp = light_display_st7789_create_device(
                 "screentest_display_main", ST_DISPLAY_WIDTH, ST_DISPLAY_HEIGHT, io);
 

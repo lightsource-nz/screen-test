@@ -27,6 +27,20 @@
 #define ST_DISPLAY_WIDTH                240
 #define ST_DISPLAY_HEIGHT               280
 
+// this panel's SPI clock, raised from light_ioport's 10MHz default. at 10MHz a full-screen
+// push of 240x280x16bpp is 134400 bytes = 107ms, a 9.3fps ceiling -- enough for the static
+// UI but not for animating a rotation, which needs every frame to be a full push. 40MHz
+// brings that to 27ms (37fps).
+//
+// set per-io_context rather than by raising light_ioport's global SPI_BAUDRATE, because that
+// global is shared with the SH1107 OLED rigs, which are on hardware that currently cannot be
+// flashed -- re-clocking a display nobody can look at is not a change worth making.
+//
+// TO BE CONFIRMED ON HARDWARE: too fast shows up as corrupt pixels rather than a clean
+// failure, so if the panel speckles or tears, step this back down. 40MHz is a common working
+// figure for ST7789 on short traces, not a datasheet guarantee for this board
+#define ST_DISPLAY_SPI_HZ               (40 * 1000 * 1000)
+
 // CST816T touch controller -- shared I2C1 bus (also used by IMU/RTC, not yet implemented),
 // confirmed from the board's schematic + wiki pin table during bring-up
 #define ST_TOUCH_PIN_SDA                6
