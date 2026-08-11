@@ -77,3 +77,7 @@ add_subdirectory(module/screentest_sh1106_spi4)
 add_subdirectory(module/screentest_sh1106_i2c)
 add_subdirectory(module/screentest_ws_touch169)
 add_subdirectory(module/light_ui_touch169)
+# measures the touch panel's visible corner radius, which the glass hides part of -- see its
+# app.c. a bring-up tool rather than a demo, kept because the constant it produces
+# (ST_DISPLAY_CORNER_RADIUS) is otherwise a guess, and a wrong guess is invisible in code
+add_subdirectory(module/screentest_calib169)

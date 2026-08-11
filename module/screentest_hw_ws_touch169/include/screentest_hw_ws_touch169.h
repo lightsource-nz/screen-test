@@ -33,15 +33,21 @@
 // software can detect that, so it has to be declared -- content placed there just silently
 // disappears, which is how the UI demo's title lost its first letters to the top-left corner.
 //
-// used as a uniform inset on all four edges rather than only at the corners, because the
-// interface rotates: an inset expressed per-edge in logical coordinates would land on the
-// wrong edges as soon as the board turned.
+// the radius is uniform on all four corners, which is what lets the interface rotate freely:
+// anything expressed per-edge in logical coordinates would land on the wrong edges as soon as
+// the board turned.
 //
-// TO BE TUNED ON HARDWARE: this is estimated from the panel's physical size (240x280 px over
-// 27.9x32.6 mm is about 8.6 px/mm, and a corner of this style is typically 2-3 mm), not read
-// from a datasheet. too small and content still clips; too large and it wastes a visible
-// band. adjust until the title clears the corner with a little to spare
-#define ST_DISPLAY_CORNER_RADIUS        20
+// MEASURED, not estimated. this was 20 for a while, guessed from the panel's physical size
+// (240x280 px over 27.9x32.6 mm is about 8.6 px/mm, and a corner of this style looked like
+// 2-3 mm). that guess was less than half the real value, and it was invisible in code -- a
+// frame drawn to it simply had its corners swallowed by the glass.
+//
+// measured with screentest_calib169, which sweeps a rounded rectangle's radius at a fixed 2px
+// inset and prints the current value on screen. a rect drawn at inset d with radius r is
+// fully inside glass of radius R exactly when r >= R - d, so the radius at which the corners
+// first close is R - 2. that transition sat between 36 and 40, and the upper end is taken
+// here: too large only pulls the frame slightly off the curve, while too small clips it again
+#define ST_DISPLAY_CORNER_RADIUS        42
 
 // this panel's SPI clock, raised from light_ioport's 10MHz default. at 10MHz a full-screen
 // push of 240x280x16bpp is 134400 bytes = 107ms, a 9.3fps ceiling -- enough for the static
