@@ -71,8 +71,13 @@ static void _poll_orientation(void)
                 // FACE_UP/FACE_DOWN: the board is flat and has no upright direction, so
                 // hold whatever rotation it had rather than snapping to a default every
                 // time it is set down
+                light_info("orientation %d (flat) -- holding rotation", orientation);
                 return;
         }
+        // logged because the orientation-to-rotation table is the part most likely to need
+        // correcting on a new board, and guessing from how the screen looks is slower than
+        // reading which value produced which rotation
+        light_info("orientation %d -> rotation %d", orientation, rotation);
         light_ui_set_rotation(_ui, rotation);
 }
 

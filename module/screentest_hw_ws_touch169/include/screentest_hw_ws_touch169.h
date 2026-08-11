@@ -71,13 +71,21 @@
 // direction, and picking one would make the UI snap around whenever it was set down. the
 // caller holds the current rotation for those (see the UI app).
 //
-// WHICH of ROTATE_90/ROTATE_270 belongs to LANDSCAPE_L is a guess until seen on hardware,
-// the same footing the axis map above started on. if turning the board rotates the UI the
-// wrong way, swap these two
+// the two landscape entries were transposed on the first attempt. the derivation, since it
+// is easy to get backwards and not worth doing a third time:
+//
+// turn the board CLOCKWISE. screen-right now points world-DOWN, and an accelerometer axis
+// pointing down reads -1g, so device X goes negative -- which light_imu classifies as
+// LANDSCAPE_L. for the interface to read upright in that position its logical top edge has
+// to sit along the panel's LEFT edge, and REND_ROTATE_270 is the transform that puts it
+// there (phys_x = y, so logical y=0 maps to phys_x=0). hence L -> 270, and R -> 90.
+//
+// portrait needs no rotation because this panel is natively portrait; a landscape panel
+// would shift every entry by 90 degrees
 #define ST_IMU_ROTATION_PORTRAIT        REND_ROTATE_0
 #define ST_IMU_ROTATION_PORTRAIT_FLIP   REND_ROTATE_180
-#define ST_IMU_ROTATION_LANDSCAPE_L     REND_ROTATE_90
-#define ST_IMU_ROTATION_LANDSCAPE_R     REND_ROTATE_270
+#define ST_IMU_ROTATION_LANDSCAPE_L     REND_ROTATE_270
+#define ST_IMU_ROTATION_LANDSCAPE_R     REND_ROTATE_90
 
 extern struct display_device *screentest_hw_ws_touch169_display(void);
 extern struct touch_device *screentest_hw_ws_touch169_touch(void);
