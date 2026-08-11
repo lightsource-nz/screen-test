@@ -16,6 +16,7 @@ target_sources(
 target_link_libraries(
         light_ui_common INTERFACE
         light_canvas
+        light_backlight
         light_ui
         light_display
         rend

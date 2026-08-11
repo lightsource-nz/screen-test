@@ -27,6 +27,7 @@ target_link_libraries(
         light_ui
         light_touch
         light_imu
+        light_backlight
         rend
         light_core
 )

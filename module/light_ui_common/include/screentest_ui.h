@@ -2,6 +2,7 @@
 #define _SCREENTEST_UI_H
 
 #include <light.h>
+#include <light_backlight.h>
 #include <light_display.h>
 #include <light_ui.h>
 #include <rend.h>
@@ -29,8 +30,26 @@
 // a steady redraw load
 #define ST_UI_FRAME_RATE                24
 
+// how long without input before the backlight dims, and the levels and fade times either
+// side of it. dimming rather than blanking: the UI stays readable, so it reads as the device
+// resting rather than switching off
+#define ST_UI_IDLE_MS                   8000
+#define ST_UI_BACKLIGHT_FULL            LIGHT_BACKLIGHT_LEVEL_MAX
+#define ST_UI_BACKLIGHT_DIM             150
+// waking is faster than dimming on purpose -- a slow fade down is unobtrusive, a slow fade
+// up feels unresponsive to the touch that asked for it
+#define ST_UI_FADE_DOWN_MS              400
+#define ST_UI_FADE_UP_MS                150
+
 extern struct display_device *_display[ST_UI_DISPLAY_COUNT];
 extern struct ui_context *_ui;
+// NULL on boards with no controllable backlight, on the same terms as _touch_main in the
+// circle demo -- the idle behaviour is simply skipped there
+extern struct backlight_device *_backlight_main;
+
+// called by an app whenever it sees user input, to hold off (or undo) the idle dim. the
+// shared demo owns the timer; only the app knows what counts as input on its board
+extern void screentest_ui_note_activity(void);
 
 // --- provided by light_ui_common, referenced by each app's Light_Application_Define ---
 // the module dependency list has to name the input modules the board actually has

@@ -1,5 +1,6 @@
 #include <screentest_ui.h>
 #include <light_canvas.h>
+#include <light_platform.h>
 
 #include <stdint.h>
 
@@ -13,6 +14,32 @@
 
 struct display_device *_display[ST_UI_DISPLAY_COUNT];
 struct ui_context *_ui;
+struct backlight_device *_backlight_main;
+
+// when input was last seen, and whether the backlight has already been dimmed for idleness.
+// the flag matters: without it every tick past the threshold would restart the fade, which
+// would hold the brightness at its starting value forever
+static uint32_t last_activity_ms;
+static bool backlight_dimmed;
+
+void screentest_ui_note_activity(void)
+{
+        last_activity_ms = light_platform_get_time_since_init();
+        if(!_backlight_main || !backlight_dimmed)
+                return;
+        backlight_dimmed = false;
+        light_backlight_fade_to(_backlight_main, ST_UI_BACKLIGHT_FULL, ST_UI_FADE_UP_MS);
+}
+
+static void _service_idle_backlight(uint32_t now)
+{
+        if(!_backlight_main || backlight_dimmed)
+                return;
+        if(now - last_activity_ms < ST_UI_IDLE_MS)
+                return;
+        backlight_dimmed = true;
+        light_backlight_fade_to(_backlight_main, ST_UI_BACKLIGHT_DIM, ST_UI_FADE_DOWN_MS);
+}
 
 #define ST_UI_BUTTON_COUNT              3
 
@@ -97,6 +124,10 @@ uint8_t screentest_ui_main(struct light_application *app)
         // independently of this app's frame rate and hold only one event at a time, so
         // collecting at frame rate could drop one
         __screentest_ui_input_poll();
+
+        // after the input poll, so a tick that saw activity resets the timer before it is
+        // tested rather than dimming for one tick and immediately waking again
+        _service_idle_backlight(light_platform_get_time_since_init());
 
         // also every tick -- the canvas's own pacing decides when a frame actually happens,
         // and light_ui_render() is a no-op on the ticks in between (and on any tick where

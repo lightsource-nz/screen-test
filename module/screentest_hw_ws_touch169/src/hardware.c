@@ -1,4 +1,5 @@
 #include <screentest_hw_ws_touch169.h>
+#include <light_backlight.h>
 #include <light_display_st7789.h>
 #include <light_imu_qmi8658.h>
 #include <light_touch_cst816t.h>
@@ -7,9 +8,8 @@
 // capacitive touch controller. moved here verbatim from screentest_ws_touch169's app.c so
 // the UI demo app can build against the same board without copying it
 
-#if(LIGHT_SYSTEM == SYSTEM_PICO_SDK)
-#include <hardware/gpio.h>
-#endif
+// no direct hardware includes any more: the backlight was the last thing this file drove as
+// a raw GPIO, and light_backlight owns that pin now
 
 struct display_device *screentest_hw_ws_touch169_display(void)
 {
@@ -41,14 +41,6 @@ struct display_device *screentest_hw_ws_touch169_display(void)
         // stopped touching it. clear again now that the offset is right
         light_display_command_clear(disp, 0);
 
-        // backlight is a plain GPIO, not part of the SPI command set -- no existing
-        // driver/ioport primitive covers it, so it's driven directly here
-#if(LIGHT_SYSTEM == SYSTEM_PICO_SDK)
-        gpio_init(ST_DISPLAY_PIN_BL);
-        gpio_set_dir(ST_DISPLAY_PIN_BL, true);
-        gpio_put(ST_DISPLAY_PIN_BL, true);
-#endif
-
         light_info("display pipeline setup complete","");
         return disp;
 }
@@ -66,6 +58,15 @@ struct touch_device *screentest_hw_ws_touch169_touch(void)
 
         light_info("touch pipeline setup complete","");
         return touch;
+}
+
+struct backlight_device *screentest_hw_ws_touch169_backlight(void)
+{
+        // the backlight is a plain pin rather than anything the ST7789 knows about, which is
+        // why it was driven straight from here as an on/off GPIO before light_backlight
+        // existed. active high: this board's enable line sources into the LED driver
+        return light_backlight_pwm_create_device(
+                "screentest_backlight_main", ST_DISPLAY_PIN_BL, false);
 }
 
 struct imu_device *screentest_hw_ws_touch169_imu(void)

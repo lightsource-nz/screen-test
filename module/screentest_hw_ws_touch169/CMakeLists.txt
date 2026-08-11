@@ -13,6 +13,7 @@ target_sources(
 
 target_link_libraries(
         screentest_hw_ws_touch169 INTERFACE
+        light_backlight
         light_display
         light_display_st7789
         light_touch

@@ -17,6 +17,7 @@ target_link_libraries(
         screentest_common PUBLIC
         light_canvas
         light_imu
+        light_backlight
         light_display
         light_touch
         rend

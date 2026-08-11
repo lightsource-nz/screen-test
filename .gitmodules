@@ -43,3 +43,6 @@
 [submodule "module/light_ui"]
 	path = module/light_ui
 	url = https://github.com/lightsource-nz/light_ui.git
+[submodule "module/light_backlight"]
+	path = module/light_backlight
+	url = https://github.com/lightsource-nz/light_backlight.git

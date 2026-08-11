@@ -3,6 +3,7 @@
 
 #include <light.h>
 #include <light_display.h>
+#include <light_backlight.h>
 #include <light_imu.h>
 #include <light_touch.h>
 

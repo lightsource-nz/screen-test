@@ -2,6 +2,7 @@
 #define _SCREENTEST_UI_H
 
 #include <light.h>
+#include <light_backlight.h>
 #include <light_display.h>
 #include <light_ui.h>
 #include <rend.h>
@@ -32,8 +33,19 @@
 #define ST_UI_ROW_GAP                   6
 #define ST_UI_FRAME_RATE                24
 
+// idle backlight behaviour -- see light_ui_common's screentest_ui.h for what these control.
+// repeated here only because this header shadows that one entirely
+#define ST_UI_IDLE_MS                   8000
+#define ST_UI_BACKLIGHT_FULL            LIGHT_BACKLIGHT_LEVEL_MAX
+#define ST_UI_BACKLIGHT_DIM             150
+#define ST_UI_FADE_DOWN_MS              400
+#define ST_UI_FADE_UP_MS                150
+
 extern struct display_device *_display[ST_UI_DISPLAY_COUNT];
 extern struct ui_context *_ui;
+extern struct backlight_device *_backlight_main;
+
+extern void screentest_ui_note_activity(void);
 
 extern void screentest_ui_event(const struct light_module *module, uint8_t event, void *arg);
 extern uint8_t screentest_ui_main(struct light_application *app);

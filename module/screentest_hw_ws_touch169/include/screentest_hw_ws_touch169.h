@@ -1,6 +1,7 @@
 #ifndef _SCREENTEST_HW_WS_TOUCH169_H
 #define _SCREENTEST_HW_WS_TOUCH169_H
 
+#include <light_backlight.h>
 #include <light_display.h>
 #include <light_imu.h>
 #include <light_touch.h>
@@ -104,5 +105,6 @@
 extern struct display_device *screentest_hw_ws_touch169_display(void);
 extern struct touch_device *screentest_hw_ws_touch169_touch(void);
 extern struct imu_device *screentest_hw_ws_touch169_imu(void);
+extern struct backlight_device *screentest_hw_ws_touch169_backlight(void);
 
 #endif

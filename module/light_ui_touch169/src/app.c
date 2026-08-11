@@ -1,6 +1,8 @@
 #include <screentest_ui.h>
+#include <light_backlight.h>
 #include <light_imu.h>
 #include <light_touch.h>
+#include <module/mod_light_backlight.h>
 #include <module/mod_light_imu.h>
 #include <module/mod_light_touch.h>
 #include <module/mod_light_display.h>
@@ -21,6 +23,7 @@ Light_Application_Define(light_ui_touch169, screentest_ui_event, screentest_ui_m
                                 &light_ui,
                                 &light_touch,
                                 &light_imu,
+                                &light_backlight,
                                 &light_core);
 
 static struct touch_device *_touch_main;
@@ -50,6 +53,7 @@ void __screentest_ui_hardware_init(void)
         _display[0] = screentest_hw_ws_touch169_display();
         _touch_main = screentest_hw_ws_touch169_touch();
         _imu_main = screentest_hw_ws_touch169_imu();
+        _backlight_main = screentest_hw_ws_touch169_backlight();
 }
 
 // keeps the interface upright as the board is turned. light_ui knows nothing about IMUs --
@@ -60,6 +64,11 @@ static void _poll_orientation(void)
         uint8_t orientation;
         if(!_imu_main || !light_imu_take_orientation(_imu_main, &orientation))
                 return;
+
+        // a settled orientation report means the board was picked up and turned, which is
+        // someone handling it -- so it counts as activity even for the flat orientations
+        // below that deliberately leave the rotation alone
+        screentest_ui_note_activity();
 
         uint8_t rotation;
         switch(orientation) {
@@ -97,7 +106,12 @@ void __screentest_ui_input_poll(void)
         // them in the display's physical frame and untransforms them itself, which is what
         // keeps taps landing on the right widget once the UI has been rotated
         bool active = _touch_main->touch_active;
-        if(active && !_touch_was_active)
+        if(active && !_touch_was_active) {
+                // activity is noted for ANY touch, not only one that lands on a widget:
+                // tapping a blank part of a dimmed screen is still someone asking for it,
+                // and having to hit a button to wake the panel would be perverse
+                screentest_ui_note_activity();
                 light_ui_input_press_at(_ui, _touch_main->x, _touch_main->y);
+        }
         _touch_was_active = active;
 }

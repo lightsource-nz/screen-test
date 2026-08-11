@@ -47,11 +47,11 @@ add_subdirectory(module/light_display_st7789)
 add_subdirectory(module/light_touch)
 add_subdirectory(module/light_touch_cst816t)
 
-# these are not submodules of this repo yet -- their remotes don't exist. resolve each from
-# module/<name> if it's there (which is where `git submodule add` will put it, so converting
-# them later needs no change here) and otherwise from a sibling checkout, the same way
-# LIGHT_PATH and FONT_CRUSHER_PATH already resolve theirs
-foreach(_ext_module light_button light_canvas light_imu light_imu_qmi8658 light_ui)
+# all of these are submodules under module/ now, which is what this resolver finds first. it
+# was written when they were sibling checkouts with no remotes, and the sibling fallback is
+# kept deliberately: it is what lets one of them be developed against a working copy outside
+# the submodule without editing the build. set <NAME>_PATH to point somewhere else entirely
+foreach(_ext_module light_backlight light_button light_canvas light_imu light_imu_qmi8658 light_ui)
         string(TOUPPER ${_ext_module} _ext_var)
         if(NOT ${_ext_var}_PATH)
                 if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/module/${_ext_module}/CMakeLists.txt")

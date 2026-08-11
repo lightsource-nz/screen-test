@@ -3,6 +3,7 @@
 #include <light_platform.h>
 #include <module/mod_light_canvas.h>
 #include <module/mod_light_display.h>
+#include <module/mod_light_backlight.h>
 #include <module/mod_light_imu.h>
 #include <module/mod_light_touch.h>
 
@@ -51,6 +52,7 @@ Light_Application_Define(screentest, screentest_event, screentest_main,
                                 &light_canvas,
                                 &light_display,
                                 &light_imu,
+                                &light_backlight,
                                 &light_touch,
                                 &light_core);
 
