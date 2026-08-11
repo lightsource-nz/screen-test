@@ -1,4 +1,4 @@
-#include <screentest_ui.h>
+#include <light_ui_demo.h>
 #include <light_backlight.h>
 #include <light_imu.h>
 #include <light_touch.h>
@@ -17,7 +17,7 @@
 // named per-app rather than after the shared demo: this define lives in each app precisely
 // so it can name its own dependencies, and the name it gives the application is what
 // light_module_get_name() reports in the log, so it should say which binary is running
-Light_Application_Define(light_ui_touch169, screentest_ui_event, screentest_ui_main,
+Light_Application_Define(light_ui_touch169, light_ui_demo_event, light_ui_demo_main,
                                 &rend,
                                 &light_display,
                                 &light_ui,
@@ -27,7 +27,7 @@ Light_Application_Define(light_ui_touch169, screentest_ui_event, screentest_ui_m
                                 &light_core);
 
 static struct touch_device *_touch_main;
-// this app's own, not shared through screentest_ui.h: the shared demo body never touches
+// this app's own, not shared through light_ui_demo.h: the shared demo body never touches
 // the IMU, only this board's orientation wiring does
 static struct imu_device *_imu_main;
 // down-edge detector. light_touch reports gestures on release, but a button press should
@@ -41,14 +41,14 @@ void main(int argc, char **argv)
         light_framework_run(argc, argv);
 }
 
-const rend_font_t *__screentest_ui_font(void)
+const rend_font_t *__light_ui_demo_font(void)
 {
         // 16px here, where the po13 rig needs 8px: this panel is 240x280, so a 12x19 glyph
         // still leaves twenty characters per row and four comfortable button rows
         return &TypeLightSans_ttf_16px_font;
 }
 
-void __screentest_ui_hardware_init(void)
+void __light_ui_demo_hardware_init(void)
 {
         _display[0] = screentest_hw_ws_touch169_display();
         _touch_main = screentest_hw_ws_touch169_touch();
@@ -68,7 +68,7 @@ static void _poll_orientation(void)
         // a settled orientation report means the board was picked up and turned, which is
         // someone handling it -- so it counts as activity even for the flat orientations
         // below that deliberately leave the rotation alone
-        screentest_ui_note_activity();
+        light_ui_demo_note_activity();
 
         uint8_t rotation;
         switch(orientation) {
@@ -90,7 +90,7 @@ static void _poll_orientation(void)
         light_ui_set_rotation(_ui, rotation);
 }
 
-void __screentest_ui_input_poll(void)
+void __light_ui_demo_input_poll(void)
 {
         _poll_orientation();
 
@@ -110,7 +110,7 @@ void __screentest_ui_input_poll(void)
                 // activity is noted for ANY touch, not only one that lands on a widget:
                 // tapping a blank part of a dimmed screen is still someone asking for it,
                 // and having to hit a button to wake the panel would be perverse
-                screentest_ui_note_activity();
+                light_ui_demo_note_activity();
                 light_ui_input_press_at(_ui, _touch_main->x, _touch_main->y);
         }
         _touch_was_active = active;

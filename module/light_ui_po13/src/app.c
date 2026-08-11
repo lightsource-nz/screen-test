@@ -1,4 +1,4 @@
-#include <screentest_ui.h>
+#include <light_ui_demo.h>
 #include <screentest_hw_po13.h>
 #include <light_button.h>
 #include <module/mod_light_button.h>
@@ -14,13 +14,13 @@
 // CS line is GP17, which is also KEY1 (see screentest_hw_po13.h). the board can drive the
 // second panel or read the second key, not both -- and this app is the one that needs keys
 //
-// no screentest_ui.h of its own: light_ui_common's defaults (64x128, 1bpp,
+// its light_ui_demo_config.h is empty: light_ui_common's defaults (64x128, 1bpp,
 // REND_ROTATE_90, one display) are already this board's real geometry
 
 // named per-app rather than after the shared demo: this define lives in each app precisely
 // so it can name its own dependencies, and the name it gives the application is what
 // light_module_get_name() reports in the log, so it should say which binary is running
-Light_Application_Define(light_ui_po13, screentest_ui_event, screentest_ui_main,
+Light_Application_Define(light_ui_po13, light_ui_demo_event, light_ui_demo_main,
                                 &rend,
                                 &light_display,
                                 &light_ui,
@@ -36,7 +36,7 @@ void main(int argc, char **argv)
         light_framework_run(argc, argv);
 }
 
-const rend_font_t *__screentest_ui_font(void)
+const rend_font_t *__light_ui_demo_font(void)
 {
         // 8px rather than the 16px face the circle-demo rigs' fonts use: at 12x19 px per
         // glyph a 128x64 logical canvas fits barely three rows of ten characters, leaving
@@ -44,7 +44,7 @@ const rend_font_t *__screentest_ui_font(void)
         return &TypeLightSans_ttf_8px_font;
 }
 
-void __screentest_ui_hardware_init(void)
+void __light_ui_demo_hardware_init(void)
 {
         _display[0] = screentest_hw_po13_display_main();
 
@@ -58,7 +58,7 @@ void __screentest_ui_hardware_init(void)
         light_info("input pipeline setup complete","");
 }
 
-void __screentest_ui_input_poll(void)
+void __light_ui_demo_input_poll(void)
 {
         uint8_t event;
 

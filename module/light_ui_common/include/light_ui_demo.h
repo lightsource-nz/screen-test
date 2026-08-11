@@ -1,0 +1,109 @@
+#ifndef _LIGHT_UI_DEMO_H
+#define _LIGHT_UI_DEMO_H
+
+// every app that uses this shared demo supplies a light_ui_demo_config.h naming ONLY what
+// its board does differently. everything below is a default, applied where the config was
+// silent.
+//
+// this used to work the other way round: an app shadowed the whole header by putting its own
+// copy earlier on the include path. that made adding any shared setting a two-place edit
+// with nothing to catch a missed one but a build failure, and it relied on the app's include
+// directory happening to be listed before this module's, which nothing enforced.
+//
+// the header is named for the module rather than for screen-test because these apps are
+// named for what they demonstrate. it cannot be light_ui.h -- that would shadow the
+// library's own public header on the include path, which is the trap this arrangement exists
+// to avoid rather than repeat
+#include <light_ui_demo_config.h>
+
+#include <light.h>
+#include <light_backlight.h>
+#include <light_display.h>
+#include <light_ui.h>
+#include <rend.h>
+
+#include <stdint.h>
+
+#ifndef LIGHT_UI_DEMO_DISPLAY_COUNT
+#define LIGHT_UI_DEMO_DISPLAY_COUNT     1
+#endif
+
+// render context geometry. the defaults are the small portrait OLED rigs'
+#ifndef LIGHT_UI_DEMO_RENDER_WIDTH
+#define LIGHT_UI_DEMO_RENDER_WIDTH      64
+#endif
+#ifndef LIGHT_UI_DEMO_RENDER_HEIGHT
+#define LIGHT_UI_DEMO_RENDER_HEIGHT     128
+#endif
+#ifndef LIGHT_UI_DEMO_RENDER_BPP
+#define LIGHT_UI_DEMO_RENDER_BPP        1
+#endif
+#ifndef LIGHT_UI_DEMO_RENDER_ROTATION
+#define LIGHT_UI_DEMO_RENDER_ROTATION   REND_ROTATE_90
+#endif
+
+#ifndef LIGHT_UI_DEMO_TITLE
+#define LIGHT_UI_DEMO_TITLE             "light_ui"
+#endif
+// pixels between stacked button rows
+#ifndef LIGHT_UI_DEMO_ROW_GAP
+#define LIGHT_UI_DEMO_ROW_GAP           2
+#endif
+// how often the UI is offered a chance to repaint. light_ui_render() is a no-op unless
+// something actually changed, so this bounds latency after an input rather than describing a
+// steady redraw load
+#ifndef LIGHT_UI_DEMO_FRAME_RATE
+#define LIGHT_UI_DEMO_FRAME_RATE        24
+#endif
+
+// how long without input before the backlight dims, and the levels and fade times either
+// side of it. dimming rather than blanking: the UI stays readable, so it reads as the device
+// resting rather than switching off
+#ifndef LIGHT_UI_DEMO_IDLE_MS
+#define LIGHT_UI_DEMO_IDLE_MS           8000
+#endif
+#ifndef LIGHT_UI_DEMO_BACKLIGHT_FULL
+#define LIGHT_UI_DEMO_BACKLIGHT_FULL    LIGHT_BACKLIGHT_LEVEL_MAX
+#endif
+#ifndef LIGHT_UI_DEMO_BACKLIGHT_DIM
+#define LIGHT_UI_DEMO_BACKLIGHT_DIM     150
+#endif
+// waking is faster than dimming on purpose -- a slow fade down is unobtrusive, a slow fade
+// up feels unresponsive to the touch that asked for it
+#ifndef LIGHT_UI_DEMO_FADE_DOWN_MS
+#define LIGHT_UI_DEMO_FADE_DOWN_MS      400
+#endif
+#ifndef LIGHT_UI_DEMO_FADE_UP_MS
+#define LIGHT_UI_DEMO_FADE_UP_MS        150
+#endif
+
+extern struct display_device *_display[LIGHT_UI_DEMO_DISPLAY_COUNT];
+extern struct ui_context *_ui;
+// NULL on boards with no controllable backlight, on the same terms as _touch_main in the
+// circle demo -- the idle behaviour is simply skipped there
+extern struct backlight_device *_backlight_main;
+
+// called by an app whenever it sees user input, to hold off (or undo) the idle dim. the
+// shared demo owns the timer; only the app knows what counts as input on its board
+extern void light_ui_demo_note_activity(void);
+
+// --- provided by light_ui_common, referenced by each app's Light_Application_Define ---
+// the module dependency list has to name the input modules the board actually has
+// (light_button, light_touch, or neither), so each app owns its own application define and
+// main(); everything else about the demo is shared
+extern void light_ui_demo_event(const struct light_module *module, uint8_t event, void *arg);
+extern uint8_t light_ui_demo_main(struct light_application *app);
+
+// --- provided by each app ---
+// creates the board's display (into _display[]) and whatever input devices it has
+extern void __light_ui_demo_hardware_init(void);
+// called every tick: translate this board's input devices onto light_ui's hardware-free
+// input entry points. a handful of lines either way -- see the two UI apps for the
+// two-button and the touch wiring
+extern void __light_ui_demo_input_poll(void);
+// the font labels are rendered in. rendered at build time by crush, whose generated symbol
+// name embeds the pixel size -- and the right pixel size differs per panel -- so the font
+// cannot be named by shared code
+extern const rend_font_t *__light_ui_demo_font(void);
+
+#endif
