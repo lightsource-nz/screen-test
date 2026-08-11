@@ -26,6 +26,7 @@ target_link_libraries(
         light_ui_touch169_font
         light_ui
         light_touch
+        light_imu
         rend
         light_core
 )

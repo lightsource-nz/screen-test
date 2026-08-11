@@ -1,5 +1,7 @@
 #include <screentest_ui.h>
+#include <light_imu.h>
 #include <light_touch.h>
+#include <module/mod_light_imu.h>
 #include <module/mod_light_touch.h>
 #include <module/mod_light_display.h>
 #include <module/mod_light_ui.h>
@@ -18,9 +20,13 @@ Light_Application_Define(light_ui_touch169, screentest_ui_event, screentest_ui_m
                                 &light_display,
                                 &light_ui,
                                 &light_touch,
+                                &light_imu,
                                 &light_core);
 
 static struct touch_device *_touch_main;
+// this app's own, not shared through screentest_ui.h: the shared demo body never touches
+// the IMU, only this board's orientation wiring does
+static struct imu_device *_imu_main;
 // down-edge detector. light_touch reports gestures on release, but a button press should
 // land the moment the finger arrives, so this watches the touch state directly rather than
 // going through light_touch_take_gesture()
@@ -43,10 +49,37 @@ void __screentest_ui_hardware_init(void)
 {
         _display[0] = screentest_hw_ws_touch169_display();
         _touch_main = screentest_hw_ws_touch169_touch();
+        _imu_main = screentest_hw_ws_touch169_imu();
+}
+
+// keeps the interface upright as the board is turned. light_ui knows nothing about IMUs --
+// it takes a rotation -- so the translation lives here, and the board header owns the actual
+// orientation-to-rotation table because it depends on the panel's native orientation
+static void _poll_orientation(void)
+{
+        uint8_t orientation;
+        if(!_imu_main || !light_imu_take_orientation(_imu_main, &orientation))
+                return;
+
+        uint8_t rotation;
+        switch(orientation) {
+        case IMU_ORIENT_PORTRAIT:       rotation = ST_IMU_ROTATION_PORTRAIT;      break;
+        case IMU_ORIENT_PORTRAIT_FLIP:  rotation = ST_IMU_ROTATION_PORTRAIT_FLIP; break;
+        case IMU_ORIENT_LANDSCAPE_L:    rotation = ST_IMU_ROTATION_LANDSCAPE_L;   break;
+        case IMU_ORIENT_LANDSCAPE_R:    rotation = ST_IMU_ROTATION_LANDSCAPE_R;   break;
+        default:
+                // FACE_UP/FACE_DOWN: the board is flat and has no upright direction, so
+                // hold whatever rotation it had rather than snapping to a default every
+                // time it is set down
+                return;
+        }
+        light_ui_set_rotation(_ui, rotation);
 }
 
 void __screentest_ui_input_poll(void)
 {
+        _poll_orientation();
+
         if(!_touch_main)
                 return;
 
@@ -55,9 +88,9 @@ void __screentest_ui_input_poll(void)
         // CST816T only answers for a short window after asserting its interrupt line, so a
         // redundant poll would mostly just return nothing anyway.
         //
-        // coordinates go straight through: this app's render context is REND_ROTATE_0, so
-        // the panel's physical space and light_ui's logical space are the same one (see
-        // light_ui_input_press_at() for what a rotated context would need)
+        // the panel's own coordinates go straight through: light_ui_input_press_at() takes
+        // them in the display's physical frame and untransforms them itself, which is what
+        // keeps taps landing on the right widget once the UI has been rotated
         bool active = _touch_main->touch_active;
         if(active && !_touch_was_active)
                 light_ui_input_press_at(_ui, _touch_main->x, _touch_main->y);

@@ -62,6 +62,23 @@
                 .sign = { 1, 1, -1 } \
         })
 
+// maps a device orientation onto the rend rotation that keeps the interface upright. lives
+// here rather than in light_ui because it depends on the PANEL's native orientation: this
+// one is natively portrait (240x280 with REND_ROTATE_0), so portrait needs no rotation at
+// all. a landscape panel would need every entry shifted by 90 degrees.
+//
+// FACE_UP/FACE_DOWN deliberately have no entry -- a board lying flat has no upright
+// direction, and picking one would make the UI snap around whenever it was set down. the
+// caller holds the current rotation for those (see the UI app).
+//
+// WHICH of ROTATE_90/ROTATE_270 belongs to LANDSCAPE_L is a guess until seen on hardware,
+// the same footing the axis map above started on. if turning the board rotates the UI the
+// wrong way, swap these two
+#define ST_IMU_ROTATION_PORTRAIT        REND_ROTATE_0
+#define ST_IMU_ROTATION_PORTRAIT_FLIP   REND_ROTATE_180
+#define ST_IMU_ROTATION_LANDSCAPE_L     REND_ROTATE_90
+#define ST_IMU_ROTATION_LANDSCAPE_R     REND_ROTATE_270
+
 extern struct display_device *screentest_hw_ws_touch169_display(void);
 extern struct touch_device *screentest_hw_ws_touch169_touch(void);
 extern struct imu_device *screentest_hw_ws_touch169_imu(void);
