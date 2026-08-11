@@ -246,11 +246,15 @@ static uint8_t screentest_main(struct light_application *app)
                         "unknown", "portrait", "portrait-flipped",
                         "landscape-left", "landscape-right", "face-up", "face-down"
                 };
-                light_info("orientation: %s (accel %d,%d,%d mg)",
+                // the temperature is logged alongside because nothing else surfaces it, and
+                // a plainly wrong value (rather than a plausible room-temperature one) is
+                // the quickest signal that its scaling constant is off
+                light_info("orientation: %s (accel %d,%d,%d mg, die %d mC)",
                                 orientation_name[orientation],
                                 _imu_main->accel_mg[IMU_AXIS_X],
                                 _imu_main->accel_mg[IMU_AXIS_Y],
-                                _imu_main->accel_mg[IMU_AXIS_Z]);
+                                _imu_main->accel_mg[IMU_AXIS_Z],
+                                _imu_main->temperature_mc);
         }
 
         _advance_slide(now);
