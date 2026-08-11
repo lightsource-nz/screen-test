@@ -28,3 +28,18 @@
 [submodule "module/light_touch_cst816t"]
 	path = module/light_touch_cst816t
 	url = https://github.com/lightsource-nz/light_touch_cst816t.git
+[submodule "module/light_button"]
+	path = module/light_button
+	url = https://github.com/lightsource-nz/light_button.git
+[submodule "module/light_canvas"]
+	path = module/light_canvas
+	url = https://github.com/lightsource-nz/light_canvas.git
+[submodule "module/light_imu"]
+	path = module/light_imu
+	url = https://github.com/lightsource-nz/light_imu.git
+[submodule "module/light_imu_qmi8658"]
+	path = module/light_imu_qmi8658
+	url = https://github.com/lightsource-nz/light_imu_qmi8658.git
+[submodule "module/light_ui"]
+	path = module/light_ui
+	url = https://github.com/lightsource-nz/light_ui.git
