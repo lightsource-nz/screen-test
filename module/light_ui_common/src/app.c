@@ -107,6 +107,11 @@ void light_ui_demo_event(const struct light_module *module, uint8_t event, void 
 
                 _ui = light_ui_create_context(canvas);
                 _build_ui();
+                // after the tree exists, not before: setting the inset re-lays-out, and with
+                // no root yet there would be nothing to lay out -- the window would keep the
+                // full-canvas rect it was created with until the first rotation happened to
+                // correct it
+                light_ui_set_safe_inset(_ui, LIGHT_UI_DEMO_SAFE_INSET);
                 // nothing on the panel matches the freshly built tree yet, so the first
                 // frame has to push the whole canvas rather than just what changed
                 light_ui_invalidate(_ui);

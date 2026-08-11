@@ -45,6 +45,12 @@
 #ifndef LIGHT_UI_DEMO_TITLE
 #define LIGHT_UI_DEMO_TITLE             "light_ui"
 #endif
+// pixels kept clear on every edge, for a panel that doesn't show its whole pixel grid.
+// defaults to 0 for the square-cornered OLED rigs; a board with rounded glass sets it to its
+// corner radius (see light_ui_set_safe_inset())
+#ifndef LIGHT_UI_DEMO_SAFE_INSET
+#define LIGHT_UI_DEMO_SAFE_INSET        0
+#endif
 // pixels between stacked button rows
 #ifndef LIGHT_UI_DEMO_ROW_GAP
 #define LIGHT_UI_DEMO_ROW_GAP           2

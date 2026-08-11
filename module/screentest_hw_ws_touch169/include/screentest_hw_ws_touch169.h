@@ -28,6 +28,21 @@
 #define ST_DISPLAY_WIDTH                240
 #define ST_DISPLAY_HEIGHT               280
 
+// the glass has rounded corners, so the panel does not show its whole pixel grid: pixels in
+// the corners are addressable and get drawn, they are simply never visible. nothing in the
+// software can detect that, so it has to be declared -- content placed there just silently
+// disappears, which is how the UI demo's title lost its first letters to the top-left corner.
+//
+// used as a uniform inset on all four edges rather than only at the corners, because the
+// interface rotates: an inset expressed per-edge in logical coordinates would land on the
+// wrong edges as soon as the board turned.
+//
+// TO BE TUNED ON HARDWARE: this is estimated from the panel's physical size (240x280 px over
+// 27.9x32.6 mm is about 8.6 px/mm, and a corner of this style is typically 2-3 mm), not read
+// from a datasheet. too small and content still clips; too large and it wastes a visible
+// band. adjust until the title clears the corner with a little to spare
+#define ST_DISPLAY_CORNER_RADIUS        20
+
 // this panel's SPI clock, raised from light_ioport's 10MHz default. at 10MHz a full-screen
 // push of 240x280x16bpp is 134400 bytes = 107ms, a 9.3fps ceiling -- enough for the static
 // UI but not for animating a rotation, which needs every frame to be a full push. 40MHz

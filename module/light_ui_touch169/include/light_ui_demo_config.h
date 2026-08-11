@@ -19,4 +19,8 @@
 // buttons being fused together
 #define LIGHT_UI_DEMO_ROW_GAP           6
 
+// this glass has rounded corners and does not show its whole pixel grid -- see
+// ST_DISPLAY_CORNER_RADIUS. the OLED rigs are square-cornered, hence the shared default of 0
+#define LIGHT_UI_DEMO_SAFE_INSET        ST_DISPLAY_CORNER_RADIUS
+
 #endif
