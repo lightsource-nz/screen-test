@@ -46,10 +46,22 @@
 #define LIGHT_UI_DEMO_TITLE             "light_ui"
 #endif
 // pixels kept clear on every edge, for a panel that doesn't show its whole pixel grid.
-// defaults to 0 for the square-cornered OLED rigs; a board with rounded glass sets it to its
-// corner radius (see light_ui_set_safe_inset())
+// defaults to 0 for the square-cornered OLED rigs. a board with rounded glass no longer needs
+// this to equal its corner radius -- that squared off a band the width of the radius on all
+// four sides. it sets LIGHT_UI_DEMO_CORNER_RADIUS instead and leaves this as a small breathing
+// margin (see light_ui_set_safe_inset())
 #ifndef LIGHT_UI_DEMO_SAFE_INSET
 #define LIGHT_UI_DEMO_SAFE_INSET        0
+#endif
+// corner radius of the root window's frame, 0 for a square one. a board with rounded glass
+// sets this so the frame follows the curve rather than floating in a square inside it.
+//
+// it is the PANEL's radius less the safe inset, not the panel's radius: insetting a rounded
+// rectangle uniformly by d leaves a rounded rectangle of radius r-d, because the arc centres
+// do not move. using the panel's own radius here would bow the corners further out than the
+// glass does (see light_ui_window_set_corner_radius())
+#ifndef LIGHT_UI_DEMO_CORNER_RADIUS
+#define LIGHT_UI_DEMO_CORNER_RADIUS     0
 #endif
 // pixels between stacked button rows
 #ifndef LIGHT_UI_DEMO_ROW_GAP

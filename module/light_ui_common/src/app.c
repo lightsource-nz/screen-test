@@ -70,6 +70,10 @@ static void _build_ui(void)
                 (struct ui_rect) { 0, 0, (int16_t)render->dim_x - 1, (int16_t)render->dim_y - 1 },
                 (const uint8_t *)LIGHT_UI_DEMO_TITLE);
 
+        // before the children exist, so the one layout pass below already accounts for the
+        // clearance the curve needs -- setting it afterwards would lay the stack out twice
+        light_ui_window_set_corner_radius(win, LIGHT_UI_DEMO_CORNER_RADIUS);
+
         // rects are left at zero here: light_ui_window_layout_stack() below assigns every
         // child an equal-height row inside the window's content area, which is the whole
         // point of it existing -- nothing about this demo needs hand-placed geometry

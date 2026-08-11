@@ -20,7 +20,13 @@
 #define LIGHT_UI_DEMO_ROW_GAP           6
 
 // this glass has rounded corners and does not show its whole pixel grid -- see
-// ST_DISPLAY_CORNER_RADIUS. the OLED rigs are square-cornered, hence the shared default of 0
-#define LIGHT_UI_DEMO_SAFE_INSET        ST_DISPLAY_CORNER_RADIUS
+// ST_DISPLAY_CORNER_RADIUS. the OLED rigs are square-cornered, hence the shared defaults of 0.
+//
+// the inset used to be the full corner radius, which kept content safe by giving up a 20px
+// band on every edge and left a square frame sitting inside round glass. now the frame itself
+// is rounded and drawn near the panel edge, so the inset is only a breathing margin and the
+// curve is carried by the corner radius instead
+#define LIGHT_UI_DEMO_SAFE_INSET        2
+#define LIGHT_UI_DEMO_CORNER_RADIUS     (ST_DISPLAY_CORNER_RADIUS - LIGHT_UI_DEMO_SAFE_INSET)
 
 #endif
