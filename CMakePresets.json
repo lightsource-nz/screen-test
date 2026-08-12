@@ -40,7 +40,7 @@
         },
         {
             "name": "conf-screentest-waveshare-touch169-riscv-debug",
-            "description": "Same board and same sources as conf-screentest-waveshare-touch169-debug, built for the RP2350's Hazard3 RISC-V cores instead of its Cortex-M33 pair. LIGHT_ARCH picks between the two archs the rp2350 chip entry registers, and light_resolve_pico_platform() turns that into PICO_PLATFORM=rp2350-riscv, from which pico-sdk selects its own RISC-V toolchain file. PICO_TOOLCHAIN_PATH is required rather than a convenience: the ARM trees find arm-none-eabi-gcc on PATH (PICO_TOOLCHAIN_PATH is empty in their caches) and there is only one PATH, so without it the SDK would search that same PATH for a riscv32-* compiler and find none. Setting it only here also keeps it out of the ARM trees. PICO_COMMON_LANG_FLAGS is pinned to pico-sdk's own second-choice entry to keep the Zcb/Zcmp code-size extensions (worth about 0.8%) -- see the vendor note for why its probe rejects them and what pinning costs.",
+            "description": "Same board and same sources as conf-screentest-waveshare-touch169-debug, built for the RP2350's Hazard3 RISC-V cores instead of its Cortex-M33 pair. LIGHT_ARCH picks between the two archs the rp2350 chip entry registers, and light_resolve_pico_platform() turns that into PICO_PLATFORM=rp2350-riscv, from which pico-sdk selects its own RISC-V toolchain file. PICO_TOOLCHAIN_PATH is required rather than a convenience: the ARM trees find arm-none-eabi-gcc on PATH (PICO_TOOLCHAIN_PATH is empty in their caches) and there is only one PATH, so without it the SDK would search that same PATH for a riscv32-* compiler and find none. Setting it only here also keeps it out of the ARM trees. Compiler flags are left to pico-sdk's own probe, which selects the Zca/Zcb/Zcmp set -- see the vendor note.",
             "inherits": [
                 "conf-screentest-base",
                 "conf-light-waveshare-touch169",
@@ -50,18 +50,16 @@
             "cacheVariables": {
                 "PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS": "-1",
                 "LIGHT_ARCH": "riscv32",
-                "PICO_TOOLCHAIN_PATH": "C:/Users/aful018/tools/riscv-toolchain-15-x64-win",
-                "PICO_COMMON_LANG_FLAGS": "-march=rv32ima_zicsr_zifencei_zba_zbb_zbs_zbkb_zca_zcb_zcmp -mabi=ilp32"
+                "PICO_TOOLCHAIN_PATH": "C:/Users/aful018/tools/riscv-toolchain-15-x64-win"
             },
             "vendor": {
                 "lightsource.nz/notes": {
-                    "PICO_COMMON_LANG_FLAGS": [
-                        "Setting this SKIPS pico_choose_compiler_flags()'s probe entirely -- it only probes when the variable is unset -- and pins the flags. The string is verbatim pico-sdk's own SECOND-choice entry from PICO_COMMON_LANG_FLAGS_LIST in cmake/preload/toolchains/pico_riscv_gcc.cmake.",
-                        "What it buys, MEASURED on light_ui_touch169 Debug: 489 UF2 blocks down to 485, about 2KB or 0.8%. Modest on purpose -- the third entry the probe would otherwise settle on is rv32imaC, which already has standard compression, so the delta is only the extra Zcb operations and Zcmp push/pop. Do not confuse this with the ~17% by which the RISC-V image exceeds the ARM one; that gap is across two ISAs and two GCC versions and is not something these flags address.",
-                        "Why the probe rejects it, which is NOT a Zcmp support gap: the probe's test file riscv_zcmp_test.c lists s0 as an asm clobber, and GCC 15 refuses s0 because it is the frame pointer at the -O0 the probe compiles at. That same file compiles clean at -O1, and cm.mvsa01/cm.mva01s assemble fine, so this toolchain (riscv-toolchain-15-x64-win, GCC 15.2.0) does support Zcmp.",
-                        "Two costs of pinning. The assembler check the probe exists to perform no longer runs. And if pico-sdk revises its preferred flags, this string silently keeps the old ones -- re-check it against pico_riscv_gcc.cmake after an SDK bump.",
-                        "Note that -mcpu=hazard3-rp2350, the list's FIRST entry, genuinely is unsupported by this GCC and is deliberately not what is pinned here.",
-                        "CMAKE_<LANG>_FLAGS_INIT only applies on a first configure, so changing this needs a fresh build tree, not a reconfigure."
+                    "compiler flags": [
+                        "Deliberately NOT pinned here. This preset briefly set PICO_COMMON_LANG_FLAGS to force the Zca/Zcb/Zcmp flag set, because pico_choose_compiler_flags() was falling through to a set without them. The real fault was in the probe, not in the flags, and it is fixed at the source instead: pico-sdk's riscv_zcmp_test.c listed s0 as an asm clobber, which GCC 15 refuses at the -O0 the probe compiles at, s0 being the frame pointer. So a probe for Zcmp support was failing for a reason unrelated to Zcmp support, on a toolchain that has it.",
+                        "That is a local patch to the vendored pico-sdk (which already carries others), and it is the better fix: every RISC-V tree gets the right flags automatically, and the probe keeps its actual job of rejecting a toolchain whose assembler lacks the instructions -- verified both ways, it still fails correctly on a -march without zcmp.",
+                        "For scale, so nobody re-litigates this for the size win: it is worth 489 UF2 blocks down to 485 on light_ui_touch169 Debug, about 2KB or 0.8%. The alternative set is already rv32imaC with standard compression, so only the extra Zcb operations and Zcmp push/pop are new. This is unrelated to the ~17% by which the RISC-V image exceeds the ARM one, which spans two ISAs and two GCC versions.",
+                        "Note that -mcpu=hazard3-rp2350, the list's FIRST entry, genuinely IS unsupported by this GCC (riscv-toolchain-15-x64-win, GCC 15.2.0). The probe is right to reject that one.",
+                        "If flags ever do need pinning: CMAKE_<LANG>_FLAGS_INIT only applies on a first configure, so it needs a fresh build tree, not a reconfigure."
                     ]
                 }
             }
