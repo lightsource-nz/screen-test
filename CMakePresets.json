@@ -39,6 +39,21 @@
             }
         },
         {
+            "name": "conf-screentest-waveshare-touch169-riscv-debug",
+            "description": "Same board and same sources as conf-screentest-waveshare-touch169-debug, built for the RP2350's Hazard3 RISC-V cores instead of its Cortex-M33 pair. LIGHT_ARCH picks between the two archs the rp2350 chip entry registers, and light_resolve_pico_platform() turns that into PICO_PLATFORM=rp2350-riscv, from which pico-sdk selects its own RISC-V toolchain file. PICO_TOOLCHAIN_PATH is required rather than a convenience: the ARM trees find arm-none-eabi-gcc on PATH (PICO_TOOLCHAIN_PATH is empty in their caches) and there is only one PATH, so without it the SDK would search that same PATH for a riscv32-* compiler and find none. Setting it only here also keeps it out of the ARM trees.",
+            "inherits": [
+                "conf-screentest-base",
+                "conf-light-waveshare-touch169",
+                "conf-light-debug"
+            ],
+            "binaryDir": "${sourceDir}/build-waveshare-touch169-riscv",
+            "cacheVariables": {
+                "PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS": "-1",
+                "LIGHT_ARCH": "riscv32",
+                "PICO_TOOLCHAIN_PATH": "C:/Users/aful018/tools/riscv-toolchain-15-x64-win"
+            }
+        },
+        {
             "name": "conf-screentest-trace",
             "inherits": [
                 "conf-screentest-base",
@@ -86,6 +101,16 @@
         {
             "name": "build-light_ui_touch169-debug",
             "configurePreset": "conf-screentest-waveshare-touch169-debug",
+            "targets": ["light_ui_touch169"]
+        },
+        {
+            "name": "build-screentest-waveshare-touch169-riscv-debug",
+            "configurePreset": "conf-screentest-waveshare-touch169-riscv-debug",
+            "targets": ["screentest_ws_touch169"]
+        },
+        {
+            "name": "build-light_ui_touch169-riscv-debug",
+            "configurePreset": "conf-screentest-waveshare-touch169-riscv-debug",
             "targets": ["light_ui_touch169"]
         },
         {
