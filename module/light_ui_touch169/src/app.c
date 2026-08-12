@@ -2,6 +2,7 @@
 #include <light_backlight.h>
 #include <light_imu.h>
 #include <light_touch.h>
+#include <module/mod_light_audio.h>
 #include <module/mod_light_backlight.h>
 #include <module/mod_light_imu.h>
 #include <module/mod_light_touch.h>
@@ -23,6 +24,7 @@ Light_Application_Define(light_ui_touch169, light_ui_demo_event, light_ui_demo_m
                                 &light_ui,
                                 &light_touch,
                                 &light_imu,
+                                &light_audio,
                                 &light_backlight,
                                 &light_core);
 
@@ -54,6 +56,9 @@ void __light_ui_demo_hardware_init(void)
         _touch_main = screentest_hw_ws_touch169_touch();
         _imu_main = screentest_hw_ws_touch169_imu();
         _backlight_main = screentest_hw_ws_touch169_backlight();
+        // NULL until the board header names the buzzer's pin, which every use in the shared
+        // demo already guards for
+        _audio_main = screentest_hw_ws_touch169_audio();
 }
 
 // keeps the interface upright as the board is turned. light_ui knows nothing about IMUs --

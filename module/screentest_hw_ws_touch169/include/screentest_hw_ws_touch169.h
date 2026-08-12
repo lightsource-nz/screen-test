@@ -123,9 +123,23 @@
 #define ST_IMU_ROTATION_LANDSCAPE_L     REND_ROTATE_270
 #define ST_IMU_ROTATION_LANDSCAPE_R     REND_ROTATE_90
 
+// the passive piezo buzzer, driven as a PWM output (see light_audio). read off the board
+// schematic rather than guessed -- leaving this undefined is the safe default, and
+// screentest_hw_ws_touch169_audio() returns NULL when it is, on the same terms as a board
+// with no backlight.
+//
+// its PWM slice is deliberately not the backlight's. slices are shared between pin pairs, so
+// two devices landing on one would fight over wrap and clkdiv, and the symptom -- the
+// backlight flickering in time with audio -- points nowhere near the cause. pin 2 and the
+// backlight's pin 25 are four slices apart; light_audio's driver logs whichever it gets, so a
+// future clash shows up at init rather than as a mystery
+#define ST_AUDIO_PIN_BUZZER             2
+
 extern struct display_device *screentest_hw_ws_touch169_display(void);
 extern struct touch_device *screentest_hw_ws_touch169_touch(void);
 extern struct imu_device *screentest_hw_ws_touch169_imu(void);
 extern struct backlight_device *screentest_hw_ws_touch169_backlight(void);
+// NULL until ST_AUDIO_PIN_BUZZER is defined above
+extern struct audio_device *screentest_hw_ws_touch169_audio(void);
 
 #endif

@@ -1,4 +1,5 @@
 #include <screentest_hw_ws_touch169.h>
+#include <light_audio.h>
 #include <light_backlight.h>
 #include <light_display_st7789.h>
 #include <light_imu_qmi8658.h>
@@ -67,6 +68,18 @@ struct backlight_device *screentest_hw_ws_touch169_backlight(void)
         // existed. active high: this board's enable line sources into the LED driver
         return light_backlight_pwm_create_device(
                 "screentest_backlight_main", ST_DISPLAY_PIN_BL, false);
+}
+
+struct audio_device *screentest_hw_ws_touch169_audio(void)
+{
+#ifdef ST_AUDIO_PIN_BUZZER
+        return light_audio_pwm_create_device("screentest_audio_main", ST_AUDIO_PIN_BUZZER);
+#else
+        // the pin is not known yet -- see ST_AUDIO_PIN_BUZZER. returning NULL rather than
+        // guessing keeps PWM off a pin that might be wired to something else entirely
+        light_warn("no buzzer pin configured for this board; audio disabled","");
+        return NULL;
+#endif
 }
 
 struct imu_device *screentest_hw_ws_touch169_imu(void)

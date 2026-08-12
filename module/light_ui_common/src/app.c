@@ -15,6 +15,7 @@
 struct display_device *_display[LIGHT_UI_DEMO_DISPLAY_COUNT];
 struct ui_context *_ui;
 struct backlight_device *_backlight_main;
+struct audio_device *_audio_main;
 
 // when input was last seen, and whether the backlight has already been dimmed for idleness.
 // the flag matters: without it every tick past the threshold would restart the fade, which
@@ -62,6 +63,48 @@ static void _on_press(struct ui_button *btn, void *user_data)
         light_ui_button_set_label(btn,
                         _toggled[index] ? _label_on[index] : _label_off[index]);
         light_info("button %d toggled %s", (int)index, _toggled[index] ? "on" : "off");
+        if(_audio_main)
+                light_audio_tone(_audio_main, LIGHT_UI_DEMO_CLICK_HZ, LIGHT_UI_DEMO_CLICK_MS);
+}
+
+// a short decaying chirp, synthesised rather than embedded: it exercises conversion, DMA and
+// rate pacing with nothing to build, embed or keep in flash, which is the whole point of a
+// bring-up sound. a square wave rather than a sine because the maths stays integer and a
+// piezo cannot tell the difference anyway
+static void _play_startup_chirp(void)
+{
+        if(!_audio_main)
+                return;
+
+        uint32_t count = (LIGHT_UI_DEMO_CHIRP_RATE * LIGHT_UI_DEMO_CHIRP_MS) / 1000;
+        int16_t *pcm = light_alloc(count * sizeof(int16_t));
+        if(!pcm) {
+                light_warn("no memory for the startup chirp (%d samples)", (int)count);
+                return;
+        }
+
+        // sweeps upward through the range a small piezo actually reproduces, with a linear
+        // decay so it ends at silence -- stopping at full amplitude would leave a step, and a
+        // step is a click
+        uint32_t phase = 0;
+        for(uint32_t i = 0; i < count; i++) {
+                uint32_t hz = 1200 + (2400 * i) / count;
+                phase += hz;
+                int32_t amp = 20000 - (int32_t)((20000 * (int64_t)i) / count);
+                bool high = ((phase / LIGHT_UI_DEMO_CHIRP_RATE) & 1) != 0;
+                pcm[i] = (int16_t)(high ? amp : -amp);
+        }
+
+        struct audio_format fmt = {
+                .sample_rate = LIGHT_UI_DEMO_CHIRP_RATE,
+                .encoding = LIGHT_AUDIO_PCM_S16,
+                .channels = 1
+        };
+        if(!light_audio_play_pcm(_audio_main, pcm, count, fmt))
+                light_warn("startup chirp was refused by the audio device","");
+        // light_audio_play_pcm() converts into its own buffer for S16, so this one has done
+        // its job by the time the call returns
+        light_free(pcm);
 }
 
 static void _build_ui(void)
@@ -120,6 +163,10 @@ void light_ui_demo_event(const struct light_module *module, uint8_t event, void 
                 // frame has to push the whole canvas rather than just what changed
                 light_ui_invalidate(_ui);
                 light_info("ui pipeline setup complete","");
+                // last, so a board where audio misbehaves has already got its display up --
+                // a bring-up sound that hangs before the first frame would look like a dead
+                // panel rather than an audio fault
+                _play_startup_chirp();
         break;
         // TODO implement unregister for event hooks
         case LF_EVENT_MODULE_UNLOAD:

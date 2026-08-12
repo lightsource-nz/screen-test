@@ -46,3 +46,6 @@
 [submodule "module/light_backlight"]
 	path = module/light_backlight
 	url = https://github.com/lightsource-nz/light_backlight.git
+[submodule "module/light_audio"]
+	path = module/light_audio
+	url = https://github.com/lightsource-nz/light_audio.git

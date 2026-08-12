@@ -17,6 +17,7 @@
 #include <light_ui_demo_config.h>
 
 #include <light.h>
+#include <light_audio.h>
 #include <light_backlight.h>
 #include <light_display.h>
 #include <light_ui.h>
@@ -95,11 +96,32 @@
 #define LIGHT_UI_DEMO_FADE_UP_MS        150
 #endif
 
+// the click a button press makes. deliberately short -- feedback, not a notification -- and
+// near a small piezo's resonance, where it is loudest for the same drive
+#ifndef LIGHT_UI_DEMO_CLICK_HZ
+#define LIGHT_UI_DEMO_CLICK_HZ          2700
+#endif
+#ifndef LIGHT_UI_DEMO_CLICK_MS
+#define LIGHT_UI_DEMO_CLICK_MS          25
+#endif
+// a short PCM chirp at startup, which exists to exercise the sample path rather than to be
+// heard: tone and PCM are entirely separate code paths through the driver, and a board where
+// the click works but the chirp does not localises the fault to the DAC/DMA side
+#ifndef LIGHT_UI_DEMO_CHIRP_RATE
+#define LIGHT_UI_DEMO_CHIRP_RATE        22050
+#endif
+#ifndef LIGHT_UI_DEMO_CHIRP_MS
+#define LIGHT_UI_DEMO_CHIRP_MS          120
+#endif
+
 extern struct display_device *_display[LIGHT_UI_DEMO_DISPLAY_COUNT];
 extern struct ui_context *_ui;
 // NULL on boards with no controllable backlight, on the same terms as _touch_main in the
 // circle demo -- the idle behaviour is simply skipped there
 extern struct backlight_device *_backlight_main;
+// NULL on boards with no buzzer, and on this board until ST_AUDIO_PIN_BUZZER is filled in.
+// every use is guarded, so a silent board is a working board
+extern struct audio_device *_audio_main;
 
 // called by an app whenever it sees user input, to hold off (or undo) the idle dim. the
 // shared demo owns the timer; only the app knows what counts as input on its board
