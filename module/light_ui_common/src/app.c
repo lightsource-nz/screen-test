@@ -83,14 +83,20 @@ static void _play_startup_chirp(void)
                 return;
         }
 
-        // sweeps upward through the range a small piezo actually reproduces, with a linear
-        // decay so it ends at silence -- stopping at full amplitude would leave a step, and a
-        // step is a click
+        // sweeps upward, with a linear decay so it ends at silence -- stopping at full
+        // amplitude would leave a step, and a step is a click.
+        //
+        // amplitude is a config knob (LIGHT_UI_DEMO_CHIRP_AMPLITUDE) rather than a constant
+        // because the right value depends entirely on what is on the end of the pin. Raising
+        // it to full scale was tried on the touch board's piezo and changed nothing audible,
+        // so the default sits below maximum where it leaves headroom for a board with an
+        // amplifier
         uint32_t phase = 0;
         for(uint32_t i = 0; i < count; i++) {
                 uint32_t hz = 1200 + (2400 * i) / count;
                 phase += hz;
-                int32_t amp = 20000 - (int32_t)((20000 * (int64_t)i) / count);
+                int32_t amp = LIGHT_UI_DEMO_CHIRP_AMPLITUDE
+                                - (int32_t)((LIGHT_UI_DEMO_CHIRP_AMPLITUDE * (int64_t)i) / count);
                 bool high = ((phase / LIGHT_UI_DEMO_CHIRP_RATE) & 1) != 0;
                 pcm[i] = (int16_t)(high ? amp : -amp);
         }

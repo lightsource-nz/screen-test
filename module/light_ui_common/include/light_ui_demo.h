@@ -106,12 +106,32 @@
 #endif
 // a short PCM chirp at startup, which exists to exercise the sample path rather than to be
 // heard: tone and PCM are entirely separate code paths through the driver, and a board where
-// the click works but the chirp does not localises the fault to the DAC/DMA side
+// the click works but the chirp does not localises the fault to the DAC/DMA side.
+//
+// "rather than to be heard" is literal on the RP2350 touch board. Its piezo does not
+// reproduce this at any amplitude up to and including full scale -- a piezo is a sharply
+// resonant device, and a duty-modulated carrier it has to demodulate for itself delivers far
+// less energy to it than the tone path's square wave at its resonance does. The path is
+// confirmed by light_audio's "playback finished after N ms" line matching the sample count,
+// not by ear. A board with a real speaker is where this becomes an audible test
 #ifndef LIGHT_UI_DEMO_CHIRP_RATE
 #define LIGHT_UI_DEMO_CHIRP_RATE        22050
 #endif
 #ifndef LIGHT_UI_DEMO_CHIRP_MS
 #define LIGHT_UI_DEMO_CHIRP_MS          120
+#endif
+// peak sample value the chirp starts at, before its decay. roughly three quarters of full
+// scale, which leaves a few dB of headroom -- the right default for a synthesised test signal
+// on hardware whose gain is unknown, and specifically not clipping on a board that puts an
+// amplifier after the pin.
+//
+// this was briefly set to full scale on the theory that a rail-to-rail swing would let the
+// piezo on the RP2350 touch board hear the PCM path. It made no audible difference, so that
+// reasoning did not survive contact with the hardware and there is nothing to be gained by
+// defaulting to the maximum. See the note on LIGHT_UI_DEMO_CHIRP_RATE: on that board the
+// sample path is verified by instrumentation rather than by ear
+#ifndef LIGHT_UI_DEMO_CHIRP_AMPLITUDE
+#define LIGHT_UI_DEMO_CHIRP_AMPLITUDE   24000
 #endif
 
 extern struct display_device *_display[LIGHT_UI_DEMO_DISPLAY_COUNT];
