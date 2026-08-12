@@ -34,6 +34,14 @@ include(${LIGHT_PATH}/external/light_preinit.cmake)
 
 project(screen-test C CXX ASM)
 
+# defines BUILD_TESTING (default ON) and calls enable_testing(). the modules that carry tests
+# gate them on BUILD_TESTING *and* a host build, so this costs nothing on the target trees --
+# a cross-compiled test binary could not be run to say anything anyway.
+#
+# so: `ctest` in build-host runs them; in build or build-waveshare-touch169 there are simply
+# none registered
+include(CTest)
+
 add_subdirectory(${LIGHT_PATH}/ light_framework)
 
 # modules
