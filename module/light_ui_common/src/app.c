@@ -44,14 +44,23 @@ static void _service_idle_backlight(uint32_t now)
 
 #define LIGHT_UI_DEMO_BUTTON_COUNT              3
 
+// named once and used in three places -- the descriptor below, and both label arrays -- so a
+// renamed button cannot end up disagreeing with the label it toggles back to
+#define DEMO_LABEL_0                            "Alpha"
+#define DEMO_LABEL_1                            "Beta"
+#define DEMO_LABEL_2                            "Gamma"
+
 static const uint8_t *const _label_off[LIGHT_UI_DEMO_BUTTON_COUNT] = {
-        (const uint8_t *)"Alpha", (const uint8_t *)"Beta", (const uint8_t *)"Gamma"
+        (const uint8_t *)DEMO_LABEL_0, (const uint8_t *)DEMO_LABEL_1, (const uint8_t *)DEMO_LABEL_2
 };
+// parenthesised so the cast plainly applies to the concatenated literal. it would anyway --
+// adjacent string literals are joined in translation phase 6, before the cast is parsed -- but
+// unparenthesised it reads like a cast of the first literal alone, next to a stray second one
 static const uint8_t *const _label_on[LIGHT_UI_DEMO_BUTTON_COUNT] = {
-        (const uint8_t *)"Alpha *", (const uint8_t *)"Beta *", (const uint8_t *)"Gamma *"
+        (const uint8_t *)(DEMO_LABEL_0 " *"), (const uint8_t *)(DEMO_LABEL_1 " *"),
+        (const uint8_t *)(DEMO_LABEL_2 " *")
 };
 static bool _toggled[LIGHT_UI_DEMO_BUTTON_COUNT];
-static struct ui_button *_button[LIGHT_UI_DEMO_BUTTON_COUNT];
 
 static struct rend_context *render;
 static struct canvas_context *canvas;
@@ -113,27 +122,25 @@ static void _play_startup_chirp(void)
         light_free(pcm);
 }
 
-static void _build_ui(void)
-{
-        struct ui_window *win = light_ui_window_create(_ui, NULL,
-                (struct ui_rect) { 0, 0, (int16_t)render->dim_x - 1, (int16_t)render->dim_y - 1 },
-                (const uint8_t *)LIGHT_UI_DEMO_TITLE);
+// the whole interface, as data. the tree's shape is the source's shape: three buttons, in the
+// order they appear on screen, inside one rounded window that stacks them.
+//
+// no rects anywhere -- Light_UI_Stack() gives every child an equal-height row in the window's
+// content area, which is the entire reason light_ui_window_layout_stack() exists. the window
+// gets no rect either: it is the root, and light_ui_relayout() sizes the root to the canvas,
+// which is what makes this identical source work on a 64x128 OLED and a 240x280 panel.
+//
+// the user_data index is what ties a press back to _toggled[]/_label_on[]; _on_press receives
+// the button itself, so nothing here needs to be bound to a variable (the old code kept a
+// _button[] array that was written and never read)
+Light_UI_Button_Define(_btn_alpha, DEMO_LABEL_0, _on_press, (void *)0);
+Light_UI_Button_Define(_btn_beta,  DEMO_LABEL_1, _on_press, (void *)1);
+Light_UI_Button_Define(_btn_gamma, DEMO_LABEL_2, _on_press, (void *)2);
 
-        // before the children exist, so the one layout pass below already accounts for the
-        // clearance the curve needs -- setting it afterwards would lay the stack out twice
-        light_ui_window_set_corner_radius(win, LIGHT_UI_DEMO_CORNER_RADIUS);
-
-        // rects are left at zero here: light_ui_window_layout_stack() below assigns every
-        // child an equal-height row inside the window's content area, which is the whole
-        // point of it existing -- nothing about this demo needs hand-placed geometry
-        for(uintptr_t i = 0; i < LIGHT_UI_DEMO_BUTTON_COUNT; i++) {
-                _toggled[i] = false;
-                _button[i] = light_ui_button_create(_ui, &win->widget,
-                                (struct ui_rect) { 0, 0, 0, 0 },
-                                _label_off[i], _on_press, (void *)i);
-        }
-        light_ui_window_layout_stack(win, LIGHT_UI_DEMO_ROW_GAP);
-}
+Light_UI_Window_Define(_demo_window, LIGHT_UI_DEMO_TITLE,
+        Light_UI_Rounded(LIGHT_UI_DEMO_CORNER_RADIUS),
+        Light_UI_Stack(LIGHT_UI_DEMO_ROW_GAP),
+        Light_UI_Children(&_btn_alpha, &_btn_beta, &_btn_gamma));
 
 void light_ui_demo_event(const struct light_module *module, uint8_t event, void *arg)
 {
@@ -159,11 +166,11 @@ void light_ui_demo_event(const struct light_module *module, uint8_t event, void 
                 light_canvas_set_frame_rate(canvas, LIGHT_UI_DEMO_FRAME_RATE);
 
                 _ui = light_ui_create_context(canvas);
-                _build_ui();
+                // the whole widget tree, from the descriptor above. building a root sizes it
+                // to the canvas, so there is no rect to compute here
+                light_ui_build(_ui, NULL, &_demo_window);
                 // after the tree exists, not before: setting the inset re-lays-out, and with
-                // no root yet there would be nothing to lay out -- the window would keep the
-                // full-canvas rect it was created with until the first rotation happened to
-                // correct it
+                // no root yet there would be nothing to lay out
                 light_ui_set_safe_inset(_ui, LIGHT_UI_DEMO_SAFE_INSET);
                 // nothing on the panel matches the freshly built tree yet, so the first
                 // frame has to push the whole canvas rather than just what changed
