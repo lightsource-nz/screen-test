@@ -78,6 +78,14 @@ endforeach()
 add_subdirectory(module/screentest_common)
 add_subdirectory(module/light_ui_common)
 
+# the WeAct MiniSTM32H7xx and its on-board ST7735S panel. In-tree rather than submodules for
+# now -- published once proven on hardware, like every other driver here
+if(LIGHT_SYSTEM STREQUAL CMSIS AND LIGHT_BOARD STREQUAL mini_stm32h7)
+        add_subdirectory(module/light_display_st7735)
+        add_subdirectory(module/screentest_hw_mini_stm32h7)
+        add_subdirectory(module/screentest_mini_stm32h7)
+endif()
+
 #   the RP2 boards' hardware modules and the applications built on them. Guarded because every
 # one of them is for a specific Pico-family board: on any other system they pull in pico-sdk
 # headers, and the PWM-backed device libraries they link have no backing peripheral. Building

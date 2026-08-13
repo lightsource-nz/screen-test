@@ -65,6 +65,21 @@
             }
         },
         {
+            "name": "conf-screentest-mini-stm32h7-debug",
+            "description": "WeAct MiniSTM32H7xx (STM32H743VIT6) on bare CMSIS. Inherits conf-light-base rather than conf-screentest-base: that base carries conf-light-pico-base, which sets LIGHT_SYSTEM=PICO_SDK and a PICO_SDK_PATH, neither of which means anything here. The arm-none-eabi toolchain is found on PATH by cmake/toolchain/arm_none_eabi.cmake, which light_preinit.cmake selects before project(); set LIGHT_TOOLCHAIN_PATH if more than one is installed and PATH order should not decide.",
+            "inherits": [
+                "conf-light-base",
+                "conf-light-debug"
+            ],
+            "binaryDir": "${sourceDir}/build-mini-stm32h7",
+            "generator": "Ninja",
+            "cacheVariables": {
+                "LIGHT_SYSTEM": "CMSIS",
+                "LIGHT_PLATFORM": "TARGET",
+                "LIGHT_BOARD": "mini_stm32h7"
+            }
+        },
+        {
             "name": "conf-screentest-trace",
             "inherits": [
                 "conf-screentest-base",
@@ -123,6 +138,10 @@
             "name": "build-light_ui_touch169-riscv-debug",
             "configurePreset": "conf-screentest-waveshare-touch169-riscv-debug",
             "targets": ["light_ui_touch169"]
+        },
+        {
+            "name": "build-screentest-mini-stm32h7-debug",
+            "configurePreset": "conf-screentest-mini-stm32h7-debug"
         },
         {
             "name": "build-screentest-trace",
