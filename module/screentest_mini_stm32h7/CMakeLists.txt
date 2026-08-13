@@ -9,6 +9,7 @@ target_link_libraries(
         screentest_mini_stm32h7 PUBLIC
         screentest_hw_mini_stm32h7
         light_display_st7735
+        light_backlight
         light_display
         light_ioport
         light_canvas

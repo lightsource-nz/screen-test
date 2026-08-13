@@ -18,6 +18,7 @@
 #include <light_canvas.h>
 #include <light_display.h>
 #include <screentest_hw_mini_stm32h7.h>
+#include <light_backlight.h>
 #include <rend.h>
 
 // the module descriptors named in Light_Application_Define() below. rend declares its own in
@@ -26,6 +27,7 @@
 #include <module/mod_light_display.h>
 #include <module/mod_light_ioport.h>
 #include <module/mod_light_display_st7735.h>
+#include <module/mod_light_backlight.h>
 
 #include <stm32h7xx.h>
 
@@ -37,6 +39,7 @@ Light_Application_Define(screentest_mini_stm32h7, app_event, app_main,
                                 &light_display,
                                 &light_ioport,
                                 &light_display_st7735,
+                                &light_backlight,
                                 &rend,
                                 &light_core);
 
@@ -51,11 +54,19 @@ Light_Application_Define(screentest_mini_stm32h7, app_event, app_main,
 #define COLOR_RED               RGB565(0xFF, 0x00, 0x00)
 
 static struct display_device *_display;
+static struct backlight_device *_backlight;
 static struct canvas_context *_canvas;
 static struct rend_context *_render;
 static uint32_t _next_toggle_ms;
 static bool _led_on;
 static uint16_t _sweep_x;
+
+//   a slow brightness ramp, purely so the PWM is visibly doing something a GPIO could not.
+// Triangular rather than sawtooth: a jump from full to zero is a blink, which is exactly what
+// a broken PWM looks like, so the ramp has to be continuous in both directions to be evidence
+#define BACKLIGHT_STEP          12
+static uint16_t _bl_level = LIGHT_BACKLIGHT_LEVEL_MAX;
+static bool _bl_falling = true;
 
 static void _led_write(bool on)
 {
@@ -80,6 +91,10 @@ static void app_event(const struct light_module *mod, uint8_t event, void *arg)
 
                 _display = screentest_hw_mini_stm32h7_display();
                 light_display_set_render_context(_display, _render);
+
+                // after the display: the panel is cleared by then, so the first thing lit is a
+                // black screen rather than whatever powered up in GDDRAM
+                _backlight = screentest_hw_mini_stm32h7_backlight();
 
                 _canvas = light_canvas_create(_render, &_display, 1);
                 //   single-buffered on purpose for this first bring-up. A 160x80x16bpp buffer
@@ -142,6 +157,25 @@ static uint8_t app_main(struct light_application *app)
                 _sweep_x += 2;
                 if(_sweep_x > ST_DISPLAY_WIDTH - 34)
                         _sweep_x = 0;
+
+                //   ramp the backlight once per frame, so a full sweep takes a few seconds and
+                // reads as a fade rather than a flicker. Bottoms out at a fifth rather than at
+                // zero: a backlight that reaches 0 is indistinguishable from one that has
+                // failed, which would make this a worse test than no test
+                if(_backlight) {
+                        if(_bl_falling) {
+                                if(_bl_level <= LIGHT_BACKLIGHT_LEVEL_MAX / 5)
+                                        _bl_falling = false;
+                                else
+                                        _bl_level -= BACKLIGHT_STEP;
+                        } else {
+                                if(_bl_level >= LIGHT_BACKLIGHT_LEVEL_MAX - BACKLIGHT_STEP)
+                                        _bl_falling = true;
+                                else
+                                        _bl_level += BACKLIGHT_STEP;
+                        }
+                        light_backlight_set_level(_backlight, _bl_level);
+                }
         }
 
         return LF_STATUS_RUN;

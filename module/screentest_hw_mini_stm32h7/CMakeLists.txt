@@ -14,6 +14,7 @@ target_link_libraries(
         screentest_hw_mini_stm32h7 INTERFACE
         light_display
         light_display_st7735
+        light_backlight
         light_ioport
         light_core
 )

@@ -1,5 +1,6 @@
 #include <screentest_hw_mini_stm32h7.h>
 #include <light_display_st7735.h>
+#include <light_backlight.h>
 
 #include <stm32h7xx.h>
 
@@ -16,20 +17,19 @@
 // OCNPolarity = TIM_OCNPOLARITY_LOW. Reading their OCPolarity = HIGH and concluding active-high
 // is the trap: that field describes CH2, which they do not use. Driving PE10 high turns the
 // backlight OFF.
-//   A plain GPIO held low rather than PWM, since full brightness needs no PWM and
-// light_platform's is still stubbed on the STM32 ports. Dimming comes for free once it exists
-// -- the pin is already the right one.
-static void _backlight_on(void)
+//   Driven through light_backlight's PWM driver now that light_platform has timer-backed PWM
+// on this chip, so it dims rather than just switching. active_low is passed as true and
+// light_backlight inverts the duty itself, which is why the platform layer below it stays a
+// conventional PWM where a higher duty means more time high.
+struct backlight_device *screentest_hw_mini_stm32h7_backlight(void)
 {
-        uint32_t n = (ST_DISPLAY_PIN_BL & 0xF);
-        RCC->AHB4ENR |= RCC_AHB4ENR_GPIOEEN;
-        GPIOE->MODER &= ~(3U << (n * 2));
-        GPIOE->MODER |= (1U << (n * 2));
-        GPIOE->OTYPER &= ~(1U << n);
-        GPIOE->PUPDR &= ~(3U << (n * 2));
-        // reset, not set: active low
-        GPIOE->BSRR = (1U << (n + 16));
-        light_info("backlight on (PE%d driven LOW -- active low, full brightness)", (int)n);
+        struct backlight_device *bl = light_backlight_pwm_create_device(
+                        "screentest_backlight_main", ST_DISPLAY_PIN_BL, true);
+        // full brightness to start, so the panel behaves exactly as it did when this was a
+        // GPIO held low -- dimming is then something an application asks for rather than
+        // something that changed underneath it
+        light_backlight_set_level(bl, LIGHT_BACKLIGHT_LEVEL_MAX);
+        return bl;
 }
 
 struct display_device *screentest_hw_mini_stm32h7_display(void)
@@ -65,10 +65,6 @@ struct display_device *screentest_hw_mini_stm32h7_display(void)
 #else
         light_display_command_clear(disp, 0);
 #endif
-
-        // after the panel is initialised and cleared, so the first thing lit is the cleared
-        // screen rather than whatever powered up in GDDRAM
-        _backlight_on();
 
         light_info("display pipeline setup complete","");
         return disp;

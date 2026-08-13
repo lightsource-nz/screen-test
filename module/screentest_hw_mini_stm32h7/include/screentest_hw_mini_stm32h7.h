@@ -64,5 +64,9 @@
 #endif
 
 extern struct display_device *screentest_hw_mini_stm32h7_display(void);
+//   call AFTER the display, so the first thing lit is a cleared panel rather than whatever
+// powered up in GDDRAM. Returns NULL on a build with no PWM, on the same terms as every other
+// optional device here
+extern struct backlight_device *screentest_hw_mini_stm32h7_backlight(void);
 
 #endif
