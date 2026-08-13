@@ -49,3 +49,7 @@
 [submodule "module/light_audio"]
 	path = module/light_audio
 	url = https://github.com/lightsource-nz/light_audio.git
+[submodule "module/light_display_st7735"]
+	path = module/light_display_st7735
+	url = https://github.com/lightsource-nz/light_display_st7735.git
+	branch = main
