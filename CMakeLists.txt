@@ -75,17 +75,26 @@ foreach(_ext_module light_audio light_backlight light_button light_canvas light_
         add_subdirectory(${${_ext_var}_PATH} ${_ext_module})
 endforeach()
 
-add_subdirectory(module/screentest_hw_po13)
-add_subdirectory(module/screentest_hw_ws_touch169)
 add_subdirectory(module/screentest_common)
 add_subdirectory(module/light_ui_common)
-add_subdirectory(module/screentest_po13)
-add_subdirectory(module/light_ui_po13)
-add_subdirectory(module/screentest_sh1106_spi4)
-add_subdirectory(module/screentest_sh1106_i2c)
-add_subdirectory(module/screentest_ws_touch169)
-add_subdirectory(module/light_ui_touch169)
-# measures the touch panel's visible corner radius, which the glass hides part of -- see its
-# app.c. a bring-up tool rather than a demo, kept because the constant it produces
-# (ST_DISPLAY_CORNER_RADIUS) is otherwise a guess, and a wrong guess is invisible in code
-add_subdirectory(module/screentest_calib169)
+
+#   the RP2 boards' hardware modules and the applications built on them. Guarded because every
+# one of them is for a specific Pico-family board: on any other system they pull in pico-sdk
+# headers, and the PWM-backed device libraries they link have no backing peripheral. Building
+# them for an STM32 board is not a thing that could work, and the failure -- six undefined
+# light_platform_pwm_* references at link, naming nothing that leads back to the board -- says
+# so very badly.
+if(LIGHT_SYSTEM STREQUAL PICO_SDK)
+        add_subdirectory(module/screentest_hw_po13)
+        add_subdirectory(module/screentest_hw_ws_touch169)
+        add_subdirectory(module/screentest_po13)
+        add_subdirectory(module/light_ui_po13)
+        add_subdirectory(module/screentest_sh1106_spi4)
+        add_subdirectory(module/screentest_sh1106_i2c)
+        add_subdirectory(module/screentest_ws_touch169)
+        add_subdirectory(module/light_ui_touch169)
+        # measures the touch panel's visible corner radius, which the glass hides part of -- see
+        # its app.c. a bring-up tool rather than a demo, kept because the constant it produces
+        # (ST_DISPLAY_CORNER_RADIUS) is otherwise a guess, and a wrong guess is invisible in code
+        add_subdirectory(module/screentest_calib169)
+endif()
