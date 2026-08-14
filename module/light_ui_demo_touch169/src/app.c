@@ -179,4 +179,18 @@ void __light_ui_demo_input_poll(void)
                 light_ui_input_press_at(_ui, _touch_main->x, _touch_main->y);
         }
         _touch_was_active = active;
+
+        //   swipe right returns to the previous page. light_ui knows nothing about gestures --
+        // the mapping from this board's touch controller onto navigation is an application
+        // fact, the same as the tap wiring above and the IMU-to-rotation wiring.
+        //
+        //   taken unconditionally rather than only when a page is showing, so a gesture is
+        // never left queued to fire later. navigate_back() answers false at the top of the
+        // tree, which is exactly the case where the swipe should mean nothing
+        struct touch_gesture gesture;
+        if(light_touch_take_gesture(_touch_main, &gesture)) {
+                light_ui_demo_note_activity();
+                if(gesture.type == TOUCH_GESTURE_SWIPE_RIGHT && light_ui_navigate_back(_ui))
+                        light_debug("swipe: returned to the previous page");
+        }
 }

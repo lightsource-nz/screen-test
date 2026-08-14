@@ -137,10 +137,57 @@ Light_UI_Button_Define(_btn_alpha, DEMO_LABEL_0, _on_press, (void *)0);
 Light_UI_Button_Define(_btn_beta,  DEMO_LABEL_1, _on_press, (void *)1);
 Light_UI_Button_Define(_btn_gamma, DEMO_LABEL_2, _on_press, (void *)2);
 
+#if LIGHT_UI_DEMO_PAGES
+
+//   the navigation example. Two pages: the main one, and a second reached from its last row
+// and returned from with a swipe. The pages reference each other -- the child names its
+// parent, the parent's handler names the child -- so the child is declared before the handler
+// that navigates to it
+Light_UI_Page_Declare(_page_detail);
+
+static void _on_open_detail(struct ui_button *btn, void *user_data)
+{
+        if(_audio_main)
+                light_audio_tone(_audio_main, LIGHT_UI_DEMO_CLICK_HZ, LIGHT_UI_DEMO_CLICK_MS);
+        //   last statement in the handler, and deliberately: navigating destroys the tree this
+        // button belongs to, so `btn` is released memory the moment it returns
+        light_ui_navigate(btn->widget.ui, &_page_detail);
+}
+static void _on_detail_back(struct ui_button *btn, void *user_data)
+{
+        if(_audio_main)
+                light_audio_tone(_audio_main, LIGHT_UI_DEMO_CLICK_HZ, LIGHT_UI_DEMO_CLICK_MS);
+        // the same route the swipe takes, so the on-screen control and the gesture cannot
+        // disagree about where "back" is
+        light_ui_navigate_back(btn->widget.ui);
+}
+
+Light_UI_Button_Define(_btn_more, "More >", _on_open_detail, NULL);
+
+Light_UI_Window_Define(_demo_window, LIGHT_UI_DEMO_TITLE,
+        Light_UI_Rounded(LIGHT_UI_DEMO_CORNER_RADIUS),
+        Light_UI_Stack(LIGHT_UI_DEMO_ROW_GAP),
+        Light_UI_Children(&_btn_alpha, &_btn_beta, &_btn_gamma, &_btn_more));
+
+Light_UI_Label_Define(_lbl_detail, "swipe right to go back");
+Light_UI_Button_Define(_btn_back, "< Back", _on_detail_back, NULL);
+Light_UI_Window_Define(_detail_window, "More",
+        Light_UI_Rounded(LIGHT_UI_DEMO_CORNER_RADIUS),
+        Light_UI_Stack(LIGHT_UI_DEMO_ROW_GAP),
+        Light_UI_Children(&_lbl_detail, &_btn_back));
+
+// the main page is top-level, so back from it has nowhere to go and does nothing
+Light_UI_Page_Define(_page_main, NULL, _demo_window);
+Light_UI_Page_Define(_page_detail, &_page_main, _detail_window);
+
+#else
+
 Light_UI_Window_Define(_demo_window, LIGHT_UI_DEMO_TITLE,
         Light_UI_Rounded(LIGHT_UI_DEMO_CORNER_RADIUS),
         Light_UI_Stack(LIGHT_UI_DEMO_ROW_GAP),
         Light_UI_Children(&_btn_alpha, &_btn_beta, &_btn_gamma));
+
+#endif
 
 void light_ui_demo_event(const struct light_module *module, uint8_t event, void *arg)
 {
@@ -168,7 +215,14 @@ void light_ui_demo_event(const struct light_module *module, uint8_t event, void 
                 _ui = light_ui_create_context(canvas);
                 // the whole widget tree, from the descriptor above. building a root sizes it
                 // to the canvas, so there is no rect to compute here
+#if LIGHT_UI_DEMO_PAGES
+                //   entered through the page system rather than built directly, so the context
+                // knows which page it is showing. light_ui_build() on its own leaves ui->page
+                // NULL, and navigate_back() would then have nothing to reason from
+                light_ui_navigate(_ui, &_page_main);
+#else
                 light_ui_build(_ui, NULL, &_demo_window);
+#endif
                 // after the tree exists, not before: setting the inset re-lays-out, and with
                 // no root yet there would be nothing to lay out
                 light_ui_set_safe_inset(_ui, LIGHT_UI_DEMO_SAFE_INSET);

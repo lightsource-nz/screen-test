@@ -19,6 +19,10 @@
 // buttons being fused together
 #define LIGHT_UI_DEMO_ROW_GAP           6
 
+// 240x280 has room for a fourth row, and this board has the touch panel the swipe-to-return
+// half of the navigation example needs
+#define LIGHT_UI_DEMO_PAGES             1
+
 // this glass has rounded corners and does not show its whole pixel grid -- see
 // ST_DISPLAY_CORNER_RADIUS. the OLED rigs are square-cornered, hence the shared defaults of 0.
 //

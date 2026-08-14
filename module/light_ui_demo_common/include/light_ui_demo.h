@@ -65,6 +65,14 @@
 #define LIGHT_UI_DEMO_CORNER_RADIUS     0
 #endif
 // pixels between stacked button rows
+//   whether the demo shows the page-navigation example: a fourth row on the main page that
+// transfers to a second page, which returns with a swipe. Off by default because it costs a
+// row, and the 64x128 OLED has 64 logical pixels of height to divide between them -- a fourth
+// would leave rows barely taller than the font. A board with room turns it on
+#ifndef LIGHT_UI_DEMO_PAGES
+#define LIGHT_UI_DEMO_PAGES             0
+#endif
+
 #ifndef LIGHT_UI_DEMO_ROW_GAP
 #define LIGHT_UI_DEMO_ROW_GAP           2
 #endif
