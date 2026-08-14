@@ -42,18 +42,7 @@ target_link_libraries(
 target_compile_definitions(
         light_ui_demo_touch169 PUBLIC
         LIGHT_PLATFORM_HAS_MULTICORE_WORKER=0
-        #   the CDC transmit FIFO, 64 bytes by default at full speed. stdio_usb_out_chars()
-        # gives up and DISCARDS the remainder of a write when the FIFO cannot drain, silently
-        # and mid-line, so any console line longer than about 128 characters lost its tail and
-        # ran into the next one. Measured with a 166-character ruler line on the touch board:
-        # cut at exactly 128 with the default, complete at 512.
-        #
-        #   how much is lost depends entirely on how many long lines an app emits -- for this
-        # boot log it was one line and four characters, not a flood. The reason to fix it is
-        # that the loss is silent and lands mid-line, not that it is voluminous.
-        #
-        #   512 rather than 256 to sit clear of the framework log buffer (256), for under half
-        # a kilobyte of RAM
+        #   set to prevent long console lines from truncating
         CFG_TUD_CDC_TX_BUFSIZE=512
 )
 
