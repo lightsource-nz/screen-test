@@ -30,6 +30,9 @@ target_link_libraries(
         light_audio
         light_backlight
         rend
+        # the board has no console, so this is here for the build-time command baked in by
+        # LIGHT_BOOT_COMMAND rather than for anything typed at runtime
+        light_cli
         light_core
 )
 
