@@ -187,10 +187,18 @@ void __light_ui_demo_input_poll(void)
         //   taken unconditionally rather than only when a page is showing, so a gesture is
         // never left queued to fire later. navigate_back() answers false at the top of the
         // tree, which is exactly the case where the swipe should mean nothing
+        //   the gesture's ENDPOINTS are what matter, not its type. light_touch classifies in
+        // the panel's frame, which is fixed to the glass, while the swipe was made relative to
+        // the interface, which rotates with the board -- so TOUCH_GESTURE_SWIPE_RIGHT means
+        // "right" only at REND_ROTATE_0, and taking it at face value made this work in portrait
+        // and act on the wrong axis in landscape. light_ui_swipe_direction() untransforms both
+        // ends through the same path a tap takes and answers in the frame the user is using
         struct touch_gesture gesture;
         if(light_touch_take_gesture(_touch_main, &gesture)) {
                 light_ui_demo_note_activity();
-                if(gesture.type == TOUCH_GESTURE_SWIPE_RIGHT && light_ui_navigate_back(_ui))
+                uint8_t dir = light_ui_swipe_direction(_ui, gesture.start_x, gesture.start_y,
+                                                gesture.end_x, gesture.end_y);
+                if(dir == UI_SWIPE_RIGHT && light_ui_navigate_back(_ui))
                         light_debug("swipe: returned to the previous page");
         }
 }
