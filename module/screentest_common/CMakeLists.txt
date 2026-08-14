@@ -1,5 +1,5 @@
 
-# INTERFACE, matching light_ui_common. as a static library this compiled app.c once on its
+# INTERFACE, matching light_ui_demo_common. as a static library this compiled app.c once on its
 # own behalf as well as into every consumer, and that library copy was dead weight: each
 # app's own compilation wins at link time (objects handed to the linker directly are
 # preferred over archive members), which is exactly what lets an app configure the shared

@@ -12,7 +12,7 @@
 #include <module/mod_light_cli.h>
 #include <TypeLightSans_ttf_16px_font.h>
 
-// app: light_ui_touch169
+// app: light_ui_demo_touch169
 // the shared light_ui demo on the RP2350-Touch-LCD-1.69, driven by tapping buttons
 // directly. no push-buttons and no light_button dependency -- this is the other half of the
 // pair, proving the same widget tree works from either input path
@@ -20,7 +20,7 @@
 // named per-app rather than after the shared demo: this define lives in each app precisely
 // so it can name its own dependencies, and the name it gives the application is what
 // light_module_get_name() reports in the log, so it should say which binary is running
-Light_Application_Define(light_ui_touch169, light_ui_demo_event, light_ui_demo_main,
+Light_Application_Define(light_ui_demo_touch169, light_ui_demo_event, light_ui_demo_main,
                                 &rend,
                                 &light_display,
                                 &light_ui,

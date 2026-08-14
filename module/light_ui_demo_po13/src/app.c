@@ -6,7 +6,7 @@
 #include <module/mod_light_ui.h>
 #include <TypeLightSans_ttf_8px_font.h>
 
-// app: light_ui_po13
+// app: light_ui_demo_po13
 // the shared light_ui demo on the Pico-OLED-1.3, navigated with the board's two onboard
 // keys: KEY0 cycles focus through the buttons, KEY1 activates the focused one.
 //
@@ -14,13 +14,13 @@
 // CS line is GP17, which is also KEY1 (see screentest_hw_po13.h). the board can drive the
 // second panel or read the second key, not both -- and this app is the one that needs keys
 //
-// its light_ui_demo_config.h is empty: light_ui_common's defaults (64x128, 1bpp,
+// its light_ui_demo_config.h is empty: light_ui_demo_common's defaults (64x128, 1bpp,
 // REND_ROTATE_90, one display) are already this board's real geometry
 
 // named per-app rather than after the shared demo: this define lives in each app precisely
 // so it can name its own dependencies, and the name it gives the application is what
 // light_module_get_name() reports in the log, so it should say which binary is running
-Light_Application_Define(light_ui_po13, light_ui_demo_event, light_ui_demo_main,
+Light_Application_Define(light_ui_demo_po13, light_ui_demo_event, light_ui_demo_main,
                                 &rend,
                                 &light_display,
                                 &light_ui,

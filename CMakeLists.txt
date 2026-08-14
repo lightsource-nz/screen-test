@@ -76,7 +76,7 @@ foreach(_ext_module light_audio light_backlight light_button light_canvas light_
 endforeach()
 
 add_subdirectory(module/screentest_common)
-add_subdirectory(module/light_ui_common)
+add_subdirectory(module/light_ui_demo_common)
 
 # the WeAct MiniSTM32H7xx and its on-board ST7735S panel. In-tree rather than submodules for
 # now -- published once proven on hardware, like every other driver here
@@ -96,11 +96,11 @@ if(LIGHT_SYSTEM STREQUAL PICO_SDK)
         add_subdirectory(module/screentest_hw_po13)
         add_subdirectory(module/screentest_hw_ws_touch169)
         add_subdirectory(module/screentest_po13)
-        add_subdirectory(module/light_ui_po13)
+        add_subdirectory(module/light_ui_demo_po13)
         add_subdirectory(module/screentest_sh1106_spi4)
         add_subdirectory(module/screentest_sh1106_i2c)
         add_subdirectory(module/screentest_ws_touch169)
-        add_subdirectory(module/light_ui_touch169)
+        add_subdirectory(module/light_ui_demo_touch169)
         # measures the touch panel's visible corner radius, which the glass hides part of -- see
         # its app.c. a bring-up tool rather than a demo, kept because the constant it produces
         # (ST_DISPLAY_CORNER_RADIUS) is otherwise a guess, and a wrong guess is invisible in code

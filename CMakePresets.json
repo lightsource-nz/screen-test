@@ -58,7 +58,7 @@
                     "compiler flags": [
                         "Deliberately NOT pinned here. This preset briefly set PICO_COMMON_LANG_FLAGS to force the Zca/Zcb/Zcmp flag set, because pico_choose_compiler_flags() was falling through to a set without them. The real fault was in the probe, not in the flags, and it is fixed at the source instead: pico-sdk's riscv_zcmp_test.c listed s0 as an asm clobber, which GCC 15 refuses at the -O0 the probe compiles at, s0 being the frame pointer. So a probe for Zcmp support was failing for a reason unrelated to Zcmp support, on a toolchain that has it.",
                         "That is a local patch to the vendored pico-sdk (which already carries others), and it is the better fix: every RISC-V tree gets the right flags automatically, and the probe keeps its actual job of rejecting a toolchain whose assembler lacks the instructions -- verified both ways, it still fails correctly on a -march without zcmp.",
-                        "For scale, so nobody re-litigates this for the size win: it is worth 489 UF2 blocks down to 485 on light_ui_touch169 Debug, about 2KB or 0.8%. The alternative set is already rv32imaC with standard compression, so only the extra Zcb operations and Zcmp push/pop are new. This is unrelated to the ~17% by which the RISC-V image exceeds the ARM one, which spans two ISAs and two GCC versions.",
+                        "For scale, so nobody re-litigates this for the size win: it is worth 489 UF2 blocks down to 485 on light_ui_demo_touch169 Debug, about 2KB or 0.8%. The alternative set is already rv32imaC with standard compression, so only the extra Zcb operations and Zcmp push/pop are new. This is unrelated to the ~17% by which the RISC-V image exceeds the ARM one, which spans two ISAs and two GCC versions.",
                         "Note that -mcpu=hazard3-rp2350, the list's FIRST entry, genuinely IS unsupported by this GCC (riscv-toolchain-15-x64-win, GCC 15.2.0). The probe is right to reject that one.",
                         "If flags ever do need pinning: CMAKE_<LANG>_FLAGS_INIT only applies on a first configure, so it needs a fresh build tree, not a reconfigure."
                     ]
@@ -116,9 +116,9 @@
             "targets": ["screentest_po13"]
         },
         {
-            "name": "build-light_ui_po13-debug",
+            "name": "build-light_ui_demo_po13-debug",
             "configurePreset": "conf-screentest-debug",
-            "targets": ["light_ui_po13"]
+            "targets": ["light_ui_demo_po13"]
         },
         {
             "name": "build-screentest-waveshare-touch169-debug",
@@ -126,9 +126,9 @@
             "targets": ["screentest_ws_touch169"]
         },
         {
-            "name": "build-light_ui_touch169-debug",
+            "name": "build-light_ui_demo_touch169-debug",
             "configurePreset": "conf-screentest-waveshare-touch169-debug",
-            "targets": ["light_ui_touch169"]
+            "targets": ["light_ui_demo_touch169"]
         },
         {
             "name": "build-screentest-waveshare-touch169-riscv-debug",
@@ -136,9 +136,9 @@
             "targets": ["screentest_ws_touch169"]
         },
         {
-            "name": "build-light_ui_touch169-riscv-debug",
+            "name": "build-light_ui_demo_touch169-riscv-debug",
             "configurePreset": "conf-screentest-waveshare-touch169-riscv-debug",
-            "targets": ["light_ui_touch169"]
+            "targets": ["light_ui_demo_touch169"]
         },
         {
             "name": "build-screentest-mini-stm32h7-debug",

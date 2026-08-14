@@ -4,7 +4,7 @@
 // board pinout and device construction (ST_DISPLAY_*, ST_TOUCH_*, ST_IMU_*)
 #include <screentest_hw_ws_touch169.h>
 
-// ONLY what this board does differently from light_ui_common's defaults. the idle backlight
+// ONLY what this board does differently from light_ui_demo_common's defaults. the idle backlight
 // behaviour, frame rate and title are all shared, so changing one is a single edit
 
 // this panel's real geometry rather than the small OLED rigs' 64x128 1bpp. no rotation at
