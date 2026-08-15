@@ -53,6 +53,30 @@
                 'conf-screentest-mini-stm32h7-debug'       = @{ LIGHT_SYSTEM = 'CMSIS'; LIGHT_BOARD = 'mini_stm32h7' }
         }
 
+        #   which OpenOCD config and SVD belong to which board. Getting this pairing wrong is not
+        # a clean failure -- attaching an rp2040 configuration to an rp2350 image misbehaves
+        # rather than erroring, and this project's launch.json named the rp2040 SVD for every
+        # configuration, including both RP2350 ones, until it was corrected alongside this
+        Debug = @{
+                'conf-screentest-debug' = @{
+                        Config = 'openocd.cfg'
+                        Svd    = '../pico-sdk/src/rp2040/hardware_regs/RP2040.svd'
+                }
+                'conf-screentest-waveshare-touch169-debug' = @{
+                        Config = 'openocd-rp2350.cfg'
+                        Svd    = '../pico-sdk/src/rp2350/hardware_regs/RP2350.svd'
+                }
+                'conf-screentest-waveshare-touch169-riscv-debug' = @{
+                        Config = 'openocd-rp2350.cfg'
+                        Svd    = '../pico-sdk/src/rp2350/hardware_regs/RP2350.svd'
+                }
+                #   debugged over an ST-Link rather than CMSIS-DAP, and it is the only target
+                # here with no UF2 path at all -- SWD is how an image reaches this board
+                'conf-screentest-mini-stm32h7-debug' = @{
+                        Config = 'openocd-stm32h7.cfg'
+                }
+        }
+
         DefaultTarget = 'light_ui_demo_touch169'
 
         #   build-host is a HOST_OS tree with no preset behind it -- hand-configured, and the one

@@ -2,35 +2,81 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    //
+    // NOTE the board-specific configurations below name their ELF explicitly rather than using
+    // ${command:cmake.launchTargetPath}. That variable resolves to whatever target the CMake
+    // Tools extension currently has selected, which is not necessarily the one whose build tree
+    // and SVD this configuration names -- and attaching an rp2040 debug session to an rp2350
+    // image fails in confusing ways. Explicit paths cost a line and cannot disagree with
+    // themselves.
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "cortex-debug attach",
+            // RP2350 / Cortex-M33. rtos hwthread matches openocd-rp2350.cfg, which exposes both
+            // M33 cores as an SMP group -- and this firmware really does use both, with TinyUSB
+            // and the log drain living on core 1.
+            "name": "touch169 (rp2350)",
             "type": "cortex-debug",
             "servertype": "openocd",
-            "cwd": "${workspaceRoot}/build",
-            "configFiles": ["${workspaceRoot}/openocd.cfg"],
-            "searchDir": ["${workspaceRoot}/../../tools/openocd/scripts"],
-            "svdFile": "${workspaceRoot}/../pico-sdk/src/rp2040/hardware_regs/rp2040.svd",
             "request": "launch",
+            "rtos": "hwthread",
+            "cwd": "${workspaceRoot}/build-waveshare-touch169",
+            "configFiles": ["${workspaceRoot}/openocd-rp2350.cfg"],
+            "searchDir": ["C:/Users/aful018/tools/xpack-openocd-0.12.0-7/openocd/scripts"],
+            "svdFile": "${workspaceRoot}/../pico-sdk/src/rp2350/hardware_regs/RP2350.svd",
+            "executable": "${workspaceRoot}/build-waveshare-touch169/module/light_ui_demo_touch169/light_ui_demo_touch169.elf",
             "windows": {
                 "serverpath": "C:/Users/aful018/tools/xpack-openocd-0.12.0-7/bin/openocd.exe",
                 "armToolchainPath": "C:\\Users\\aful018\\tools\\arm-gnu-toolchain-14.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin"
-            },
-            "executable": "${command:cmake.launchTargetPath}"
+            }
+        },
+        {
+            // RP2040. The build/ tree is shared by several presets, so confirm it is currently
+            // configured for the rp2040 debug preset before relying on this.
+            "name": "po13 (rp2040)",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "request": "launch",
+            "rtos": "hwthread",
+            "cwd": "${workspaceRoot}/build",
+            "configFiles": ["${workspaceRoot}/openocd.cfg"],
+            "searchDir": ["C:/Users/aful018/tools/xpack-openocd-0.12.0-7/openocd/scripts"],
+            "svdFile": "${workspaceRoot}/../pico-sdk/src/rp2040/hardware_regs/RP2040.svd",
+            "executable": "${workspaceRoot}/build/module/light_ui_demo_po13/light_ui_demo_po13.elf",
+            "windows": {
+                "serverpath": "C:/Users/aful018/tools/xpack-openocd-0.12.0-7/bin/openocd.exe",
+                "armToolchainPath": "C:\\Users\\aful018\\tools\\arm-gnu-toolchain-14.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin"
+            }
+        },
+        {
+            // whichever target CMake Tools has selected -- convenient while iterating, but it
+            // is on you to make sure the selected target matches openocd.cfg and the SVD
+            "name": "cortex-debug attach (selected target)",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "request": "launch",
+            "cwd": "${workspaceRoot}/build",
+            "configFiles": ["${workspaceRoot}/openocd.cfg"],
+            "searchDir": ["C:/Users/aful018/tools/xpack-openocd-0.12.0-7/openocd/scripts"],
+            "svdFile": "${workspaceRoot}/../pico-sdk/src/rp2040/hardware_regs/RP2040.svd",
+            "executable": "${command:cmake.launchTargetPath}",
+            "windows": {
+                "serverpath": "C:/Users/aful018/tools/xpack-openocd-0.12.0-7/bin/openocd.exe",
+                "armToolchainPath": "C:\\Users\\aful018\\tools\\arm-gnu-toolchain-14.2.rel1-mingw-w64-x86_64-arm-none-eabi\\bin"
+            }
         },
         {
             "name": "host-mode",
             "type": "cppdbg",
             "request": "launch",
-            "cwd": "${workspaceRoot}/build",
+            "cwd": "${workspaceRoot}/build-host",
             "program": "${command:cmake.launchTargetPath}"
         },
         {
             "name": "native-win64-gcc-12.1.0",
             "type": "cppdbg",
             "request": "launch",
-            "cwd": "${workspaceRoot}/build",
+            "cwd": "${workspaceRoot}/build-host",
             "miDebuggerPath": "C:/msys64/mingw64/bin/gdb.exe",
             "program": "${command:cmake.launchTargetPath}"
         }
