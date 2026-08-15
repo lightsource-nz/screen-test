@@ -13,7 +13,10 @@
 // TODO implement version fields properly
 #define ST_VERSION_STR                  "0.1.0"
 
-#define ST_INFO_STR                     "screen-test v" CF_VERSION_STR
+// ST_VERSION_STR, not CF_VERSION_STR -- the latter is crossfire's macro and is not defined
+// anywhere in this project. Copied across with the rest of this header, and it compiled only
+// because nothing ever expands ST_INFO_STR; the first use would have been a build failure
+#define ST_INFO_STR                     "screen-test v" ST_VERSION_STR
 
 // TODO make display count configurable at runtime
 #define ST_DISPLAY_COUNT                1
