@@ -106,6 +106,15 @@ endif()
 # light_platform_pwm_* references at link, naming nothing that leads back to the board -- says
 # so very badly.
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)
+        #   these stay unguarded past PICO_SDK ON PURPOSE, and the distinction from the touch169
+        # block below is the whole point. The po13 modules target the Waveshare Pico-OLED 1.3"
+        # EXPANSION board: the invariant is the expansion board, not the host, so they build and
+        # run on any Pico-compatible target -- rp2040 Pico and Pico 2 variants alike. Narrowing
+        # them to a PICO_BOARD the way touch169 is narrowed would be wrong, and wrong in a way
+        # that looks tidy: it would drop working builds for every host but one.
+        #
+        #   the test to apply is which piece of hardware is fixed. An expansion board fixes the
+        # peripheral and leaves the host free; an integrated board fixes both
         add_subdirectory(module/screentest_hw_po13)
         add_subdirectory(module/screentest_po13)
         add_subdirectory(module/light_ui_demo_po13)
