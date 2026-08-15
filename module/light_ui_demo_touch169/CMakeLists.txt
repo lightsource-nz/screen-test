@@ -41,9 +41,34 @@ target_link_libraries(
 # CDC, so the message queue is drained from the main loop instead
 target_compile_definitions(
         light_ui_demo_touch169 PUBLIC
+        #   still 0: light_core's own core 1 worker stays disabled, because the drain now
+        # happens inside the platform's core 1 USB worker instead (see LIGHT_PLATFORM_USB_ON_CORE1
+        # below). Setting this to 1 as well would launch a SECOND core 1 worker
         LIGHT_PLATFORM_HAS_MULTICORE_WORKER=0
+        #   put TinyUSB and the message-queue drain on core 1 TOGETHER. The comment above about
+        # the core1 worker racing TinyUSB was true of the old arrangement, where the worker ran
+        # on core 1 and TinyUSB on core 0; the race is between cores, not with core 1 as such,
+        # so co-locating both on core 1 removes it. What this buys is the CDC busy-wait in
+        # stdio_usb_out_chars() no longer being paid by the task loop that renders the UI.
+        LIGHT_PLATFORM_USB_ON_CORE1=1
+        #   the two SDK knobs that arrangement depends on. Without them the SDK pumps tud_task()
+        # from core 0 -- via a low priority IRQ, or an alarm on the default pool, which lives on
+        # core 0 -- and calls tusb_init() there too, which is what decides the core USBCTRL_IRQ
+        # is enabled on. Either one alone reintroduces exactly the cross-core access being removed
+        PICO_STDIO_USB_ENABLE_TINYUSB_INIT=0
+        PICO_STDIO_USB_ENABLE_IRQ_BACKGROUND_TASK=0
         #   set to prevent long console lines from truncating
         CFG_TUD_CDC_TX_BUFSIZE=512
+        #   how long stdio_usb_out_chars() busy-waits for the host to drain the CDC FIFO
+        # before giving up on a write. The SDK default is 500000 (500 ms) PER WRITE, and with
+        # the message queue drained from the main loop (above), that wait is paid by the task
+        # loop itself -- an attached-but-slow console stalls rendering, touch and audio with it.
+        # Measured: the same firmware stalled 13.2 s against a capture script that reopened its
+        # output file per line, and 1.7 s against a buffered reader.
+        #   1 ms bounds the worst case by 500x. The cost is console output dropped when the
+        # host falls behind, which is the correct trade for a device whose UI must stay
+        # responsive -- a missing log line is recoverable, a frozen panel is what the user sees
+        PICO_STDIO_USB_STDOUT_TIMEOUT_US=1000
 )
 
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)
