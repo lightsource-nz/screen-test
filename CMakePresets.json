@@ -82,17 +82,23 @@
         },
         {
             "name": "conf-screentest-trace",
+            "description": "As conf-screentest-debug but at TRACE verbosity. conf-light-pico is inherited for the same reason it is there: it supplies LIGHT_PLATFORM and LIGHT_BOARD, and without a board light_platform.cmake has nothing to select a chip or toolchain from. This preset previously omitted it and could only configure by inheriting a board from whatever cache already occupied build/ -- so it appeared to work in a used tree and failed in a fresh one.",
             "inherits": [
                 "conf-screentest-base",
+                "conf-light-pico",
                 "conf-light-trace"
-            ]
+            ],
+            "binaryDir": "${sourceDir}/build-trace"
         },
         {
             "name": "conf-screentest-release",
+            "description": "As conf-screentest-debug but built for release. See conf-screentest-trace for why conf-light-pico is inherited and why this has its own binaryDir.",
             "inherits": [
                 "conf-screentest-base",
+                "conf-light-pico",
                 "conf-light-release"
-            ]
+            ],
+            "binaryDir": "${sourceDir}/build-release"
         }
     ],
     "buildPresets": [
@@ -146,13 +152,11 @@
         },
         {
             "name": "build-screentest-trace",
-            "configurePreset": "conf-screentest-trace",
-            "targets": ["screentest"]
+            "configurePreset": "conf-screentest-trace"
         },
         {
             "name": "build-screentest-release",
-            "configurePreset": "conf-screentest-release",
-            "targets":["screentest"]
+            "configurePreset": "conf-screentest-release"
         }
     ]
 }

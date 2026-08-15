@@ -1,11 +1,20 @@
 cmake_minimum_required(VERSION 3.18)
 
 # front-load initialisers for light and pico-sdk
+#   CACHE, not a normal variable, and the distinction is load-bearing. module/rend/CMakeLists.txt
+# also declares LIGHT_PATH with `set(... CACHE PATH ...)`, defaulting it relative to ITSELF --
+# which lands on screen-test/module/light_framework_mk3, a path that does not exist. Creating a
+# cache entry REMOVES any normal variable of the same name so the cached value is visible, so a
+# plain `set(LIGHT_PATH ...)` here is silently discarded the moment rend is added, and the build
+# fails looking for light_preinit.cmake under module/.
+#   the fallback below always cached its value, so this only bites when LIGHT_PATH is set in the
+# ENVIRONMENT -- which is exactly what the script layer does. Every existing build tree here was
+# configured before that was true, which is why they work and a fresh one did not.
 if(DEFINED ENV{LIGHT_PATH} AND (NOT LIGHT_PATH))
-    set(LIGHT_PATH "$ENV{LIGHT_PATH}")
+    set(LIGHT_PATH "$ENV{LIGHT_PATH}" CACHE PATH "path to the root directory of the light-framework project")
 endif()
 if(DEFINED ENV{PICO_SDK_PATH} AND (NOT PICO_SDK_PATH))
-    set(PICO_SDK_PATH "$ENV{PICO_SDK_PATH}")
+    set(PICO_SDK_PATH "$ENV{PICO_SDK_PATH}" CACHE PATH "path to the pico-sdk checkout")
 endif()
 if(NOT LIGHT_PATH)
     set(LIGHT_PATH "${CMAKE_CURRENT_LIST_DIR}/../light_framework_mk3" CACHE PATH "path to the root directory of the light-framework project")
@@ -20,8 +29,12 @@ endif()
 # this project. Findcrush.cmake then quietly fetches font-crusher from GitHub instead, so a
 # local edit to the crush tooling silently has no effect on this build. resolved here first,
 # as a sibling of the project root, exactly as LIGHT_PATH is above
+#   CACHE for the same reason as LIGHT_PATH above: rend declares FONT_CRUSHER_PATH as a cache
+# entry too, so an uncached value here is removed as soon as rend is added and its own guess
+# wins -- at which point Findcrush.cmake fetches font-crusher from GitHub and local edits to the
+# crush tooling silently stop affecting this build
 if(DEFINED ENV{FONT_CRUSHER_PATH} AND (NOT FONT_CRUSHER_PATH))
-    set(FONT_CRUSHER_PATH "$ENV{FONT_CRUSHER_PATH}")
+    set(FONT_CRUSHER_PATH "$ENV{FONT_CRUSHER_PATH}" CACHE PATH "path to the root directory of the font-crusher project")
 endif()
 if(NOT FONT_CRUSHER_PATH)
     get_filename_component(_font_crusher_default "${CMAKE_CURRENT_LIST_DIR}/../font-crusher" REALPATH)

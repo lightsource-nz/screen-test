@@ -16,8 +16,8 @@
         Trees = @{
                 'conf-screentest-debug'                         = 'build'
                 'conf-screentest-host-debug'                    = 'build'
-                'conf-screentest-trace'                         = 'build'
-                'conf-screentest-release'                       = 'build'
+                'conf-screentest-trace'                         = 'build-trace'
+                'conf-screentest-release'                       = 'build-release'
                 'conf-screentest-waveshare-touch169-debug'      = 'build-waveshare-touch169'
                 'conf-screentest-waveshare-touch169-riscv-debug' = 'build-waveshare-touch169-riscv'
                 'conf-screentest-mini-stm32h7-debug'            = 'build-mini-stm32h7'
@@ -48,6 +48,8 @@
                 'conf-screentest-host-debug'               = @{ LIGHT_PLATFORM = 'HOST'; LIGHT_BOARD = 'pico_hostmode' }
                 'conf-screentest-waveshare-touch169-debug' = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'waveshare_rp2350_touch_lcd_1.69'; PICO_PLATFORM = 'rp2350-arm-s' }
                 'conf-screentest-waveshare-touch169-riscv-debug' = @{ LIGHT_PLATFORM = 'TARGET'; PICO_PLATFORM = 'rp2350-riscv' }
+                'conf-screentest-trace'                    = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'pico'; LIGHT_RUN_MODE = 'TRACE' }
+                'conf-screentest-release'                  = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'pico'; LIGHT_RUN_MODE = 'PRODUCTION' }
                 'conf-screentest-mini-stm32h7-debug'       = @{ LIGHT_SYSTEM = 'CMSIS'; LIGHT_BOARD = 'mini_stm32h7' }
         }
 
