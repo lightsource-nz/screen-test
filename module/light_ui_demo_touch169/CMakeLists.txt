@@ -57,6 +57,12 @@ target_compile_definitions(
         # is enabled on. Either one alone reintroduces exactly the cross-core access being removed
         PICO_STDIO_USB_ENABLE_TINYUSB_INIT=0
         PICO_STDIO_USB_ENABLE_IRQ_BACKGROUND_TASK=0
+        #   the last thing on core 0 that still wrote to stdio was the SDK's own panic(), which
+        # prints from whichever core died. This routes it through light_core_port_panic(), which
+        # formats on the dying core and hands the printing to core 1. DOES_NOT_RETURN=1 is what
+        # makes the format string and its arguments arrive intact (see pico/platform/panic.h)
+        PICO_PANIC_FUNCTION=light_core_port_panic
+        PICO_PANIC_FUNCTION_DOES_NOT_RETURN=1
         #   set to prevent long console lines from truncating
         CFG_TUD_CDC_TX_BUFSIZE=512
         #   how long stdio_usb_out_chars() busy-waits for the host to drain the CDC FIFO
