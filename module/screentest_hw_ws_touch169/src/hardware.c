@@ -25,14 +25,21 @@ struct display_device *screentest_hw_ws_touch169_display(void)
         struct display_device *disp = light_display_st7789_create_device(
                 "screentest_display_main", ST_DISPLAY_WIDTH, ST_DISPLAY_HEIGHT, io);
 
-        // both row_offset=20 and col_offset=20 were tried here and had zero visible effect
-        // on a persistent noise strip -- but that test was confounded by screentest_common's
-        // render context being hardcoded to the small OLED test rigs' 64x128 1bpp geometry
-        // (since fixed, see ST_RENDER_WIDTH/HEIGHT/BPP in the app's screentest.h) and by a
-        // width/height axis experiment (also since reverted). now that both are fixed and
-        // the noise strip is confirmed to persist against a genuinely correct buffer,
-        // retrying the original row_offset=20 guess -- 20 is the commonly-cited GDDRAM
-        // offset for this exact panel size in the maker community
+        //   row_offset 20 is CONFIRMED, not the community guess it started as. The panel's
+        // visible area is GDDRAM rows 20..299, so writing the framebuffer at offset 20 puts
+        // row 0 of the buffer at row 0 of the glass and covers it exactly.
+        //
+        //   measured rather than assumed, by setting it to 0 and looking: the image moved UP
+        // by 20, the top 20 rows fell off the glass, and rows 260..279 showed a blank band --
+        // unwritten GDDRAM 280..299. Restoring 20 removed the band. Touch corroborates the
+        // alignment independently: tapping the extreme top of the visible glass reports y=1
+        // and the extreme bottom reports y=278, against a 280-row buffer.
+        //
+        //   worth stating plainly because the earlier note here recorded the opposite
+        // impression -- that offsets had "zero visible effect" -- which was true only of a
+        // test confounded by a render context still hardcoded to the OLED rigs' 64x128 1bpp
+        // geometry. Anyone re-testing this on the strength of that note would be repeating a
+        // measurement that has since been made properly.
         light_display_st7789_set_offset(disp, 0, 20);
         // creating the device already cleared the panel -- but that ran with the offset
         // still at its default of 0, so it blanked GDDRAM rows 0..279 while every update
