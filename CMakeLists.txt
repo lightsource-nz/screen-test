@@ -107,15 +107,40 @@ endif()
 # so very badly.
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)
         add_subdirectory(module/screentest_hw_po13)
-        add_subdirectory(module/screentest_hw_ws_touch169)
         add_subdirectory(module/screentest_po13)
         add_subdirectory(module/light_ui_demo_po13)
         add_subdirectory(module/screentest_sh1106_spi4)
         add_subdirectory(module/screentest_sh1106_i2c)
-        add_subdirectory(module/screentest_ws_touch169)
-        add_subdirectory(module/light_ui_demo_touch169)
-        # measures the touch panel's visible corner radius, which the glass hides part of -- see
-        # its app.c. a bring-up tool rather than a demo, kept because the constant it produces
-        # (ST_DISPLAY_CORNER_RADIUS) is otherwise a guess, and a wrong guess is invisible in code
-        add_subdirectory(module/screentest_calib169)
+
+        #   the Waveshare RP2350-Touch-LCD-1.69 modules. Everything specific to that hardware is
+        # RP2350-only and always will be: there is one revision of the board, so there is exactly
+        # one PICO_BOARD value that builds any of this, and matching on it is both the narrowest
+        # and the most durable test available. Guarding on the CHIP instead would be wrong in the
+        # direction that matters -- it would keep letting these build for any other RP2350 board,
+        # which is where the panel, the touch controller and the pin map all stop being true.
+        #
+        #   what went wrong without this: light_ui_demo_touch169 was built for an rp2040 tree and
+        # failed at link with `undefined reference to light_core_port_panic'. That is the SDK
+        # panic hook it installs, and it exists solely in light_core_chip_rp2350 along with the
+        # core 1 USB worker it hands printing to -- the rp2040 port does not mention
+        # LIGHT_PLATFORM_USB_ON_CORE1 at all. So the app could never have worked there; the panic
+        # symbol was just the first thing the linker happened to notice, and it names nothing
+        # that leads back to the board. Exactly the badly-worded failure the comment above is
+        # about, one level further down.
+        #
+        #   the other three are guarded on the same condition even though they link cleanly for
+        # rp2040 today. Linking is not the bar -- they drive a panel, a touch controller and a
+        # pin map that only exist on this board, so a build of them for anything else produces a
+        # binary that cannot run. Leaving them out on the grounds that they happen to link would
+        # be preserving builds whose only property is that nobody has tried them yet
+        if(PICO_BOARD STREQUAL waveshare_rp2350_touch_lcd_1.69)
+                add_subdirectory(module/screentest_hw_ws_touch169)
+                add_subdirectory(module/screentest_ws_touch169)
+                add_subdirectory(module/light_ui_demo_touch169)
+                # measures the touch panel's visible corner radius, which the glass hides part of
+                # -- see its app.c. a bring-up tool rather than a demo, kept because the constant
+                # it produces (ST_DISPLAY_CORNER_RADIUS) is otherwise a guess, and a wrong guess
+                # is invisible in code
+                add_subdirectory(module/screentest_calib169)
+        endif()
 endif()
