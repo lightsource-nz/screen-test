@@ -51,7 +51,8 @@
             "cacheVariables": {
                 "PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS": "-1",
                 "LIGHT_ARCH": "riscv32",
-                "PICO_TOOLCHAIN_PATH": "C:/Users/aful018/tools/riscv-toolchain-15-x64-win"
+                "_comment_PICO_TOOLCHAIN_PATH": "read from the environment, never hardcoded -- light-env.ps1 sets it from the 'riscv-toolchain' entry in the gitignored user.config.ps1, or from <LIGHT_TOOLS_PATH>/riscv-toolchain*. The RISC-V toolchain is deliberately kept OFF PATH (it breaks the ARM trees), so this variable is the only way it reaches the build; configuring this preset without dot-sourcing light-env.ps1 first will fail to find a compiler.",
+                "PICO_TOOLCHAIN_PATH": "$env{PICO_TOOLCHAIN_PATH}"
             },
             "vendor": {
                 "lightsource.nz/notes": {
