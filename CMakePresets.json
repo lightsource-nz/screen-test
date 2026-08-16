@@ -19,6 +19,15 @@
             ]
         },
         {
+            "name": "conf-screentest-host-os-debug",
+            "description": "The plain-Linux/Windows host build, and the ONLY configuration that registers this project's test suite. Distinct from conf-screentest-host-debug, which is a host build of the Pico SDK (pico_hostmode) and a different thing entirely. This tree was hand-configured for a long time and existed under no preset, so 'how do I run the tests' had no reproducible answer and CI had nothing to call. binaryDir matches the directory that already existed, so nobody's working tree is invalidated.",
+            "inherits": [
+                "conf-light-host-debug"
+            ],
+            "binaryDir": "${sourceDir}/build-host",
+            "generator": "Ninja"
+        },
+        {
             "name": "conf-screentest-debug",
             "inherits": [
                 "conf-screentest-base",

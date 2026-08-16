@@ -16,6 +16,7 @@
         Trees = @{
                 'conf-screentest-debug'                         = 'build'
                 'conf-screentest-host-debug'                    = 'build'
+                'conf-screentest-host-os-debug'                 = 'build-host'
                 'conf-screentest-trace'                         = 'build-trace'
                 'conf-screentest-release'                       = 'build-release'
                 'conf-screentest-waveshare-touch169-debug'      = 'build-waveshare-touch169'
@@ -46,6 +47,7 @@
         Expect = @{
                 'conf-screentest-debug'                    = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'pico' }
                 'conf-screentest-host-debug'               = @{ LIGHT_PLATFORM = 'HOST'; LIGHT_BOARD = 'pico_hostmode' }
+                'conf-screentest-host-os-debug'            = @{ LIGHT_PLATFORM = 'HOST'; LIGHT_SYSTEM = 'HOST_OS' }
                 'conf-screentest-waveshare-touch169-debug' = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'waveshare_rp2350_touch_lcd_1.69'; PICO_PLATFORM = 'rp2350-arm-s' }
                 'conf-screentest-waveshare-touch169-riscv-debug' = @{ LIGHT_PLATFORM = 'TARGET'; PICO_PLATFORM = 'rp2350-riscv' }
                 'conf-screentest-trace'                    = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'pico'; LIGHT_RUN_MODE = 'TRACE' }
@@ -79,12 +81,18 @@
 
         DefaultTarget = 'light_ui_demo_touch169'
 
-        #   build-host is a HOST_OS tree with no preset behind it -- hand-configured, and the one
-        # both mutants.ps1 harnesses default to. Declared here so light-test.ps1 can find it;
-        # note that no screen-test preset produces it, so it must already exist or be created by
-        # hand until a preset is added.
+        #   build-host is the HOST_OS tree, and the only configuration that registers this
+        # project's tests -- it is also what both mutants.ps1 harnesses default to. It now has a
+        # preset (conf-screentest-host-os-debug) so CI and a fresh clone can create it; it used to
+        # be hand-configured, which is why this pointed at conf-screentest-host-debug instead.
+        #
+        #   that was wrong in a way that looked fine: conf-screentest-host-debug is a PICO SDK
+        # host build (pico_hostmode) and resolves to the shared ${sourceDir}/build tree, which
+        # normally holds an rp2040 target configuration. So test.ps1 rebuilt firmware, ctest found
+        # no tests, ctest exited 0, and the script reported "all checks passed" having tested
+        # nothing. light-test.ps1 now passes --no-tests=error so that cannot recur silently.
         Test = @{
-                Preset = 'conf-screentest-host-debug'
+                Preset = 'conf-screentest-host-os-debug'
                 Ctest  = $true
         }
 
