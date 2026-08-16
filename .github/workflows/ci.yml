@@ -1,24 +1,10 @@
 # Builds and tests screen-test on every push and pull request.
 #
-# WHY THIS SHAPE: the project's scripts/ layer already knows how to configure, build and test
-# without human input -- that is what it was written for. So this workflow's only real job is to
-# lay the dependencies out the way the scripts expect and then call them. It deliberately does
-# NOT invoke cmake directly: the moment CI grows its own build recipe, that recipe and the one
-# developers use start drifting, and CI stops being evidence about the thing people actually run.
-#
-# THE LAYOUT is the whole trick. light-env.ps1 resolves every dependency as ../<name> relative to
-# the project, so checking each one out as a sibling inside the workspace means nothing needs
-# configuring -- no paths, no environment, no user config:
-#
-#     $GITHUB_WORKSPACE/
-#       screen-test/            <- this repository
-#       light_framework_mk3/    <- LIGHT_PATH
-#       light_display/          <- the display group
-#       font-crusher/           <- FONT_CRUSHER_PATH (supplies the `crush` font tool)
-#       pico-sdk/               <- PICO_SDK_PATH (RP2 jobs only)
-#
-# Likewise the ARM toolchain is unpacked to ~/tools/arm-gnu-toolchain, which is one of the
-# locations light-env.ps1 already searches. Nothing here teaches the scripts anything new.
+# The mechanics live in light_framework_mk3/.github/workflows/, so this file says only what is
+# true of THIS project: which dependencies it needs beside it, and which board configurations are
+# worth building. Everything else -- the sibling layout, the pinned ARM toolchain, picotool's apt
+# packages, driving scripts/ rather than cmake -- is shared, because three copies of it drifting
+# is the failure the scripts/ layer exists to prevent.
 name: CI
 
 on:
@@ -27,7 +13,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-# a second push to the same branch makes the first run irrelevant, and these jobs are not cheap
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -35,60 +20,17 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  #   pinned, and pinned to the SAME version used on the developer machine. An embedded build is
-  # not version-agnostic: the toolchain decides code size, and in one case here it decided whether
-  # a RISC-V instruction-set probe passed at all. CI on whatever gcc-arm-none-eabi apt happens to
-  # ship would be testing a different compiler from the one that produces the firmware.
-  ARM_TOOLCHAIN_VERSION: 14.2.rel1
-
 jobs:
   host:
     name: host tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: screen-test
-          submodules: recursive
-
-      - uses: actions/checkout@v4
-        with:
-          repository: lightsource-nz/light_framework_mk3
-          path: light_framework_mk3
-          submodules: recursive
-
-      - uses: actions/checkout@v4
-        with:
-          repository: lightsource-nz/light_display
-          path: light_display
-
-      #   needed even for a host build: rend's Findcrush.cmake looks for font-crusher and
-      # FetchContent-fetches a copy from GitHub when it cannot find one. That would work, and
-      # would silently test a different crush from the sibling checkout.
-      - uses: actions/checkout@v4
-        with:
-          repository: lightsource-nz/font-crusher
-          path: font-crusher
-          submodules: recursive
-
-      - name: install build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build
-
-      #   the whole point of the exercise: one command, the same one a developer runs. It
-      # configures build-host from conf-screentest-host-os-debug if it is absent, builds it, and
-      # runs ctest with --no-tests=error so a suite that silently registers nothing fails here
-      # rather than reporting green.
-      - name: test
-        working-directory: screen-test
-        shell: pwsh
-        run: ./scripts/test.ps1
+    uses: lightsource-nz/light_framework_mk3/.github/workflows/project-test.yml@main
+    with:
+      project: screen-test
+      light_display: true
+      font_crusher: true
 
   firmware:
     name: ${{ matrix.name }}
-    runs-on: ubuntu-latest
     strategy:
       # one board failing says nothing about the others, and knowing which of them broke in a
       # single run is worth more than finishing a few minutes sooner
@@ -99,101 +41,24 @@ jobs:
             preset: conf-screentest-debug
             targets: screentest_po13 light_ui_demo_po13 screentest_sh1106_i2c screentest_sh1106_spi4
             tree: build
-            pico: true
+            pico_sdk: true
           - name: rp2350 (Waveshare Touch-LCD 1.69)
             preset: conf-screentest-waveshare-touch169-debug
             targets: screentest_ws_touch169 light_ui_demo_touch169 screentest_calib169
             tree: build-waveshare-touch169
-            pico: true
+            pico_sdk: true
+          # bare CMSIS: no Pico SDK involved at all, which is why pico_sdk is false here
           - name: stm32h7 (WeAct MiniSTM32H7xx, bare CMSIS)
             preset: conf-screentest-mini-stm32h7-debug
             targets: screentest_mini_stm32h7
             tree: build-mini-stm32h7
-            pico: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: screen-test
-          submodules: recursive
-
-      - uses: actions/checkout@v4
-        with:
-          repository: lightsource-nz/light_framework_mk3
-          path: light_framework_mk3
-          submodules: recursive
-
-      - uses: actions/checkout@v4
-        with:
-          repository: lightsource-nz/light_display
-          path: light_display
-
-      - uses: actions/checkout@v4
-        with:
-          repository: lightsource-nz/font-crusher
-          path: font-crusher
-          submodules: recursive
-
-      #   the vendored fork, not raspberrypi/pico-sdk: it carries local patches this project
-      # depends on, including the RISC-V Zcmp probe fix and the USB host driver corrections.
-      #   non-recursive submodules on purpose -- that fetches tinyusb, which the USB builds need,
-      # without dragging in tinyusb's own tree (Pico-PIO-USB and friends), which nothing here uses.
-      - uses: actions/checkout@v4
-        if: matrix.pico
-        with:
-          repository: lightsource-nz/pico-sdk
-          ref: master
-          path: pico-sdk
-          submodules: true
-
-      - name: install build tools
-        run: |
-          sudo apt-get update
-          # libusb + pkg-config are for picotool, which the SDK builds from source to produce
-          # the UF2s; without them its configure fails in a way that names only picotool
-          sudo apt-get install -y ninja-build libusb-1.0-0-dev pkg-config
-
-      - name: cache arm toolchain
-        id: arm-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/tools/arm-gnu-toolchain
-          key: arm-gnu-toolchain-${{ env.ARM_TOOLCHAIN_VERSION }}-x86_64
-
-      #   unpacked to ~/tools/arm-gnu-toolchain because that is already one of the directories
-      # light-env.ps1 looks in (see its $armBin candidates). Adding it to PATH here instead would
-      # work too, and would be a second place that has to agree with the scripts.
-      - name: install arm toolchain
-        if: steps.arm-cache.outputs.cache-hit != 'true'
-        run: |
-          set -euo pipefail
-          mkdir -p ~/tools
-          base="arm-gnu-toolchain-${ARM_TOOLCHAIN_VERSION}-x86_64-arm-none-eabi"
-          curl -fsSL --retry 3 \
-            "https://developer.arm.com/-/media/Files/downloads/gnu/${ARM_TOOLCHAIN_VERSION}/binrel/${base}.tar.xz" \
-            -o /tmp/arm.tar.xz
-          tar -xf /tmp/arm.tar.xz -C ~/tools
-          mv ~/tools/"$base" ~/tools/arm-gnu-toolchain
-
-      - name: build
-        working-directory: screen-test
-        shell: pwsh
-        run: |
-          # one invocation per target: the first configures the tree, the rest reuse it.
-          # build.ps1 throws on a non-zero cmake exit, and the pwsh shell fails the step on it
-          foreach ($t in "${{ matrix.targets }}".Split(' ', [StringSplitOptions]::RemoveEmptyEntries)) {
-                  ./scripts/build.ps1 -Target $t -Preset "${{ matrix.preset }}"
-          }
-
-      #   the images themselves, so a run can be flashed to real hardware without rebuilding.
-      # if-no-files-found: error, because an upload step that quietly matches nothing is how you
-      # end up with a green run and an empty artifact
-      - name: upload images
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.preset }}
-          if-no-files-found: error
-          path: |
-            screen-test/${{ matrix.tree }}/module/*/*.uf2
-            screen-test/${{ matrix.tree }}/module/*/*.elf
-            screen-test/${{ matrix.tree }}/module/*/*.bin
-            screen-test/${{ matrix.tree }}/module/*/*.hex
+            pico_sdk: false
+    uses: lightsource-nz/light_framework_mk3/.github/workflows/project-build.yml@main
+    with:
+      project: screen-test
+      preset: ${{ matrix.preset }}
+      targets: ${{ matrix.targets }}
+      tree: ${{ matrix.tree }}
+      light_display: true
+      font_crusher: true
+      pico_sdk: ${{ matrix.pico_sdk }}
