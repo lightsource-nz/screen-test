@@ -63,7 +63,7 @@ add_subdirectory(module/rend)
 #   the display group -- core, six panel drivers and backlight. These were seven separate
 # repositories and seven submodule pointers here, kept in step by hand; they are now one
 # project, resolved by path rather than vendored. Nothing needs configuring for the normal
-# layout: light_resolve_project() falls back to a sibling checkout at ../light-display.
+# layout: light_resolve_project() falls back to a sibling checkout at ../light_display.
 #
 #   adding it defines every module in the group, including drivers this project never links
 # (there is no ST7735 panel on any RP2 board here). That is free -- they are INTERFACE
@@ -72,7 +72,14 @@ add_subdirectory(module/rend)
 #
 #   light_ioport is deliberately absent from this list. It moved into the framework, so it
 # arrives with add_subdirectory(${LIGHT_PATH}) above.
-light_resolve_project(LIGHT_DISPLAY light-display)
+#
+#   MARKER, because the group and one of its own modules share the name light_display. The
+# resolver looks for an in-project module/<name> before the sibling, and module/light_display is
+# exactly what a checkout of the MODULE would be called -- this repository had one until the
+# consolidation. Without a marker that only the group has, restoring that directory for any
+# reason would silently shadow the group, and the build would fail hunting for the six drivers
+# that had never been added.
+light_resolve_project(LIGHT_DISPLAY light_display MARKER module/light_display/CMakeLists.txt)
 add_subdirectory(${LIGHT_DISPLAY_PATH} light_display_group)
 
 add_subdirectory(module/light_touch)
