@@ -59,42 +59,41 @@ add_subdirectory(${LIGHT_PATH}/ light_framework)
 
 # modules
 add_subdirectory(module/rend)
-add_subdirectory(module/light_display)
-add_subdirectory(module/light_ioport)
-add_subdirectory(module/light_display_sh1106)
-add_subdirectory(module/light_display_sh1107)
-add_subdirectory(module/light_display_po13)
-add_subdirectory(module/light_display_st7789)
+
+#   the display group -- core, six panel drivers and backlight. These were seven separate
+# repositories and seven submodule pointers here, kept in step by hand; they are now one
+# project, resolved by path rather than vendored. Nothing needs configuring for the normal
+# layout: light_resolve_project() falls back to a sibling checkout at ../light-display.
+#
+#   adding it defines every module in the group, including drivers this project never links
+# (there is no ST7735 panel on any RP2 board here). That is free -- they are INTERFACE
+# libraries and compile nothing until something links them -- and it is the point: which
+# drivers exist is the group's business, and no longer a list this file has to maintain.
+#
+#   light_ioport is deliberately absent from this list. It moved into the framework, so it
+# arrives with add_subdirectory(${LIGHT_PATH}) above.
+light_resolve_project(LIGHT_DISPLAY light-display)
+add_subdirectory(${LIGHT_DISPLAY_PATH} light_display_group)
+
 add_subdirectory(module/light_touch)
 add_subdirectory(module/light_touch_cst816t)
 
-# all of these are submodules under module/ now, which is what this resolver finds first. it
-# was written when they were sibling checkouts with no remotes, and the sibling fallback is
-# kept deliberately: it is what lets one of them be developed against a working copy outside
-# the submodule without editing the build. set <NAME>_PATH to point somewhere else entirely
-foreach(_ext_module light_audio light_backlight light_button light_canvas light_imu light_imu_qmi8658 light_ui)
+#   still one repository each, and still submodules under module/, which is what
+# light_resolve_project() finds first. The sibling fallback is what lets any one of them be
+# developed against a working copy outside the submodule without editing this file; set
+# <NAME>_PATH to point somewhere else entirely.
+foreach(_ext_module light_audio light_button light_canvas light_imu light_imu_qmi8658 light_ui)
         string(TOUPPER ${_ext_module} _ext_var)
-        if(NOT ${_ext_var}_PATH)
-                if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/module/${_ext_module}/CMakeLists.txt")
-                        set(${_ext_var}_PATH "${CMAKE_CURRENT_LIST_DIR}/module/${_ext_module}")
-                else()
-                        set(${_ext_var}_PATH "${CMAKE_CURRENT_LIST_DIR}/../${_ext_module}")
-                endif()
-        endif()
-        get_filename_component(${_ext_var}_PATH "${${_ext_var}_PATH}" REALPATH)
-        if(NOT EXISTS "${${_ext_var}_PATH}/CMakeLists.txt")
-                message(FATAL_ERROR "could not find ${_ext_module} at ${${_ext_var}_PATH} -- set ${_ext_var}_PATH")
-        endif()
+        light_resolve_project(${_ext_var} ${_ext_module})
         add_subdirectory(${${_ext_var}_PATH} ${_ext_module})
 endforeach()
 
 add_subdirectory(module/screentest_common)
 add_subdirectory(module/light_ui_demo_common)
 
-# the WeAct MiniSTM32H7xx and its on-board ST7735S panel. In-tree rather than submodules for
-# now -- published once proven on hardware, like every other driver here
+# the WeAct MiniSTM32H7xx and its on-board ST7735S panel. The ST7735 driver itself is no longer
+# named here -- it comes with the display group, like every other panel driver
 if(LIGHT_SYSTEM STREQUAL CMSIS AND LIGHT_BOARD STREQUAL mini_stm32h7)
-        add_subdirectory(module/light_display_st7735)
         add_subdirectory(module/screentest_hw_mini_stm32h7)
         add_subdirectory(module/screentest_mini_stm32h7)
 endif()

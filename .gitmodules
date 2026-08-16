@@ -1,27 +1,9 @@
 [submodule "module/rend"]
 	path = module/rend
 	url = https://github.com/lightsource-nz/rend.git
-[submodule "module/light_display"]
-	path = module/light_display
-	url = https://github.com/lightsource-nz/light_display.git
-[submodule "module/light_display_sh1107"]
-	path = module/light_display_sh1107
-	url = https://github.com/lightsource-nz/light_display_sh1107.git
-[submodule "module/light_ioport"]
-	path = module/light_ioport
-	url = https://github.com/lightsource-nz/light_ioport.git
-[submodule "module/light_display_sh1106"]
-	path = module/light_display_sh1106
-	url = https://github.com/lightsource-nz/light_display_sh1106.git
-[submodule "module/light_display_po13"]
-	path = module/light_display_po13
-	url = https://github.com/lightsource-nz/light_display_po13.git
 [submodule "cmake/light_presets"]
 	path = cmake/light_presets
 	url = https://github.com/lightsource-nz/light_presets.git
-[submodule "module/light_display_st7789"]
-	path = module/light_display_st7789
-	url = https://github.com/lightsource-nz/light_display_st7789.git
 [submodule "module/light_touch"]
 	path = module/light_touch
 	url = https://github.com/lightsource-nz/light_touch.git
@@ -43,13 +25,6 @@
 [submodule "module/light_ui"]
 	path = module/light_ui
 	url = https://github.com/lightsource-nz/light_ui.git
-[submodule "module/light_backlight"]
-	path = module/light_backlight
-	url = https://github.com/lightsource-nz/light_backlight.git
 [submodule "module/light_audio"]
 	path = module/light_audio
 	url = https://github.com/lightsource-nz/light_audio.git
-[submodule "module/light_display_st7735"]
-	path = module/light_display_st7735
-	url = https://github.com/lightsource-nz/light_display_st7735.git
-	branch = main
