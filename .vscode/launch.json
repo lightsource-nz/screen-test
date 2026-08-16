@@ -12,14 +12,19 @@
     "version": "0.2.0",
     "configurations": [
         {
-            // RP2350 / Cortex-M33. rtos hwthread matches openocd-rp2350.cfg, which exposes both
-            // M33 cores as an SMP group -- and this firmware really does use both, with TinyUSB
-            // and the log drain living on core 1.
+            //   RP2350 / Cortex-M33. NO "rtos" setting: openocd-rp2350.cfg no longer groups the
+            // two M33s as an SMP hwthread pair, because examining core 1 at startup stalls this
+            // firmware -- core 1 runs the log drain (and TinyUSB) and stops while holding the
+            // stream lock, after which core 0 blocks forever on its next log call. See that file
+            // for the measurements.
+            //   asking for "hwthread" here against a server that no longer publishes one makes
+            // the debugger and the server disagree about how many threads exist, so it has to
+            // come out at the same time. Core 1 is still reachable on demand -- the config says
+            // how.
             "name": "touch169 (rp2350)",
             "type": "cortex-debug",
             "servertype": "openocd",
             "request": "launch",
-            "rtos": "hwthread",
             "cwd": "${workspaceRoot}/build-waveshare-touch169",
             "configFiles": ["${workspaceRoot}/openocd-rp2350.cfg"],
             "searchDir": ["C:/Users/aful018/tools/xpack-openocd-0.12.0-7/openocd/scripts"],
@@ -31,13 +36,14 @@
             }
         },
         {
-            // RP2040. The build/ tree is shared by several presets, so confirm it is currently
+            //   RP2040. The build/ tree is shared by several presets, so confirm it is currently
             // configured for the rp2040 debug preset before relying on this.
+            //   no "rtos" setting, for the same reason as the RP2350 entry above: openocd.cfg
+            // no longer publishes an SMP hwthread group.
             "name": "po13 (rp2040)",
             "type": "cortex-debug",
             "servertype": "openocd",
             "request": "launch",
-            "rtos": "hwthread",
             "cwd": "${workspaceRoot}/build",
             "configFiles": ["${workspaceRoot}/openocd.cfg"],
             "searchDir": ["C:/Users/aful018/tools/xpack-openocd-0.12.0-7/openocd/scripts"],
