@@ -23,7 +23,7 @@ permissions:
 jobs:
   host:
     name: host tests
-    uses: lightsource-nz/light_framework_mk3/.github/workflows/project-test.yml@main
+    uses: lightsource-nz/light_framework_mk3/.github/workflows/project-test.yml@v1
     with:
       project: screen-test
       light_display: true
@@ -53,7 +53,7 @@ jobs:
             targets: screentest_mini_stm32h7
             tree: build-mini-stm32h7
             pico_sdk: false
-    uses: lightsource-nz/light_framework_mk3/.github/workflows/project-build.yml@main
+    uses: lightsource-nz/light_framework_mk3/.github/workflows/project-build.yml@v1
     with:
       project: screen-test
       preset: ${{ matrix.preset }}
