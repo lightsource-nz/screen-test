@@ -66,15 +66,21 @@ target_compile_definitions(
         #   set to prevent long console lines from truncating
         CFG_TUD_CDC_TX_BUFSIZE=512
         #   how long stdio_usb_out_chars() busy-waits for the host to drain the CDC FIFO
-        # before giving up on a write. The SDK default is 500000 (500 ms) PER WRITE, and with
-        # the message queue drained from the main loop (above), that wait is paid by the task
-        # loop itself -- an attached-but-slow console stalls rendering, touch and audio with it.
-        # Measured: the same firmware stalled 13.2 s against a capture script that reopened its
-        # output file per line, and 1.7 s against a buffered reader.
-        #   1 ms bounds the worst case by 500x. The cost is console output dropped when the
-        # host falls behind, which is the correct trade for a device whose UI must stay
-        # responsive -- a missing log line is recoverable, a frozen panel is what the user sees
-        PICO_STDIO_USB_STDOUT_TIMEOUT_US=1000
+        # before giving up on a write. The SDK default is 500000 (500 ms) PER WRITE. This was
+        # 1 ms when the message queue was drained from the main loop, where a slow host stalled
+        # rendering, touch and audio (measured: 13.2 s against a capture script that reopened
+        # its output file per line). Under LIGHT_PLATFORM_USB_ON_CORE1 (above) every stdio
+        # write happens on the core 1 worker, so the timeout now bounds only log-drain latency
+        # -- the UI never pays it.
+        #   and 1 ms is BELOW the transport's own cadence: TinyUSB's CDC moves at most one
+        # 64-byte packet per USB frame (1 ms) per flush cycle, so any burst that fills the
+        # 512-byte FIFO saw its writes time out in lockstep with the frame clock. Measured: the
+        # shutdown path's module-unload logging arrived with every line after the sixth cut at
+        # exactly 64 bytes, identically on every run. 5 ms sits comfortably above the per-packet
+        # cadence while still bounding the stalled-host case: a wedged reader costs at most
+        # 5 ms per message on the log drain, and the 64-slot message queue in front of it is
+        # what actually protects core 0
+        PICO_STDIO_USB_STDOUT_TIMEOUT_US=5000
 )
 
 if(LIGHT_SYSTEM STREQUAL PICO_SDK)
