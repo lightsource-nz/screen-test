@@ -1,5 +1,4 @@
 #include <light_ui_demo.h>
-#include <light_cli.h>
 #include <light_backlight.h>
 #include <light_imu.h>
 #include <light_touch.h>
@@ -31,9 +30,6 @@ Light_Application_Define(light_ui_demo_touch169, light_ui_demo_event, light_ui_d
                                 &light_imu,
                                 &light_audio,
                                 &light_backlight,
-                                // loaded so its one-shot task is scheduled and the baked boot
-                                // command gets dispatched; the command tree itself registers
-                                // through .light.static regardless
                                 &light_cli,
                                 &light_core);
 
@@ -45,81 +41,6 @@ static struct imu_device *_imu_main;
 // land the moment the finger arrives, so this watches the touch state directly rather than
 // going through light_touch_take_gesture()
 static bool _touch_was_active;
-
-//   the command tree, reached two ways: LIGHT_BOOT_COMMAND, baked into the image by CMake and
-// run once at application launch (which is what makes the brightness this board starts at a
-// preset setting rather than a #define somebody has to edit this file to change) -- and
-// interactively, typed at the USB CDC console and fed through _poll_console() below. Lines are
-// typed without the root's name: "backlight 128", "shutdown".
-static struct light_cli_invocation_result do_cmd_touch169(struct light_cli_invocation *invoke)
-{
-        // the bare root command does nothing on its own; it exists to hang subcommands off
-        return Result_Success;
-}
-static struct light_cli_invocation_result do_cmd_touch169_backlight(struct light_cli_invocation *invoke)
-{
-        const uint8_t *value = light_cli_invocation_get_arg_value(invoke, 0);
-
-        if(!value) {
-                light_error("backlight: expected a level in 0..%d", LIGHT_BACKLIGHT_LEVEL_MAX);
-                return Result_Error;
-        }
-        //   parsed by hand rather than with strtol: the whole input is a build-time constant of
-        // at most four digits, and this reports a bad one precisely rather than silently
-        // yielding zero the way atoi() would
-        uint32_t level = 0;
-        for(const uint8_t *p = value; *p; p++) {
-                if(*p < '0' || *p > '9') {
-                        light_error("backlight: '%s' is not a number", value);
-                        return Result_Error;
-                }
-                level = (level * 10) + (uint32_t)(*p - '0');
-                if(level > LIGHT_BACKLIGHT_LEVEL_MAX) {
-                        light_error("backlight: level %s exceeds the maximum of %d",
-                                        value, LIGHT_BACKLIGHT_LEVEL_MAX);
-                        return Result_Error;
-                }
-        }
-        if(!_backlight_main) {
-                light_error("backlight: no backlight device");
-                return Result_Error;
-        }
-        light_info("backlight: setting level to %d", level);
-        light_backlight_set_level(_backlight_main, (uint16_t) level);
-
-        return Result_Success;
-}
-//   asks the demo's periodic task to return LF_STATUS_SHUTDOWN, which ends the scheduler loop
-// and starts the orderly unload -- see main() below for what the board does after that. A
-// request rather than anything immediate, because this handler runs inside cli_task() and the
-// tail of the current scheduler pass should still happen; the demo task answers on its next
-// tick, which is also what guarantees the "shutting down" line below is queued while the log
-// drain is still running to print it
-// defined below the handlers, which the help handler needs by address
-Light_Command_Declare(cmd_touch169, &root_command);
-static struct light_cli_invocation_result do_cmd_touch169_shutdown(struct light_cli_invocation *invoke)
-{
-        light_info("shutdown: winding down at the console's request");
-        light_ui_demo_request_shutdown();
-        return Result_Success;
-}
-//   interactive discoverability: "help" lists the subcommands and what they take. Against the
-// root command, so it stays correct as commands are added rather than being a hand-kept list
-static struct light_cli_invocation_result do_cmd_touch169_help(struct light_cli_invocation *invoke)
-{
-        light_cli_print_command_help(&cmd_touch169);
-        return Result_Success;
-}
-//   the root name has to match the first token of LIGHT_BOOT_COMMAND: process_command_line()
-// treats argv[0] as the root command, exactly as a shell command line does
-Light_Command_Define(cmd_touch169, &root_command, "touch169",
-                        "commands for the RP2350-Touch-LCD-1.69 demo", do_cmd_touch169, 0, 0);
-Light_Command_Define(cmd_touch169_backlight, &cmd_touch169, "backlight",
-                        "sets the panel backlight level", do_cmd_touch169_backlight, 1, 1);
-Light_Command_Define(cmd_touch169_shutdown, &cmd_touch169, "shutdown",
-                        "winds down the framework and drops the board into BOOTSEL", do_cmd_touch169_shutdown, 0, 0);
-Light_Command_Define(cmd_touch169_help, &cmd_touch169, "help",
-                        "lists the commands this console accepts", do_cmd_touch169_help, 0, 0);
 
 void main(int argc, char **argv)
 {
@@ -197,27 +118,8 @@ static void _poll_orientation(void)
         light_ui_set_rotation(_ui, rotation);
 }
 
-//   the console feeder: pops at most ONE completed line per tick from the core 1 USB worker
-// (which reads, echoes and line-edits at its end -- core 0 must never touch the CDC endpoints
-// itself) and queues it for cli_task() to dispatch on a later tick. One per tick is the
-// intended pace, not a shortcut: cli_task() drains one line per tick and is registered ahead
-// of this task, so the queue between them never holds more than a single line -- see
-// cli_task()'s own comment for why that ordering is load-bearing.
-//   queued against cmd_touch169, so lines are typed without the root's name: "backlight 128",
-// "shutdown", "help".
-static void _poll_console(void)
-{
-        uint8_t line[LIGHT_STREAM_MAX_MSG_LENGTH];
-        if(!light_core_port_console_take_line(line, sizeof(line)))
-                return;
-        // typing at the console is handling the device, the same as touching it
-        light_ui_demo_note_activity();
-        light_cli_queue_line(&cmd_touch169, line);
-}
-
 void __light_ui_demo_input_poll(void)
 {
-        _poll_console();
         _poll_orientation();
 
         if(!_touch_main)

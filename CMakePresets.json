@@ -45,7 +45,7 @@
             "binaryDir": "${sourceDir}/build-waveshare-touch169",
             "cacheVariables": {
                 "PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS": "-1",
-                "LIGHT_BOOT_COMMAND": "touch169 backlight 600"
+                "LIGHT_BOOT_COMMAND": "light_ui_demo backlight 600"
             }
         },
         {

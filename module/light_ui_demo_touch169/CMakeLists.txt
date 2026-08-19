@@ -31,7 +31,8 @@ target_link_libraries(
         light_backlight
         light_draw
         # dispatches both the build-time command baked in by LIGHT_BOOT_COMMAND and the lines
-        # typed at the USB CDC console at runtime (see _poll_console() in app.c)
+        # typed at the USB CDC console at runtime (the command tree and console feeder live in
+        # light_ui_demo_common; this app's part is loading &light_cli so cli_task runs)
         light_cli
         light_core
 )

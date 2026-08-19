@@ -21,5 +21,9 @@ target_link_libraries(
         light_ui
         light_display
         light_draw
+        # the shared command tree (backlight, shutdown, help) and the console feeder live in
+        # this module now; whether cli_task actually runs is still each app's choice, via
+        # &light_cli in its Light_Application_Define
+        light_cli
         light_core
 )

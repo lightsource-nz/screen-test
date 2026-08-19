@@ -1,5 +1,6 @@
 #include <light_ui_demo.h>
 #include <light_canvas.h>
+#include <light_cli.h>
 #include <light_platform.h>
 
 #include <stdint.h>
@@ -32,6 +33,104 @@ void light_ui_demo_request_shutdown(void)
 {
         shutdown_requested = true;
 }
+
+//   the demo's command tree, shared by every app the same way the widget tree is. Reached two
+// ways: LIGHT_BOOT_COMMAND, baked into the image by CMake and run once at application launch
+// (which is what makes the brightness a board starts at a preset setting rather than a #define
+// somebody has to edit a file to change) -- and interactively on boards with a console, typed
+// at the USB CDC prompt and fed through _poll_console() below. Lines are typed without the
+// root's name: "backlight 128", "shutdown".
+//   apps hang board-specific subcommands off cmd_light_ui_demo, declared in light_ui_demo.h.
+static struct light_cli_invocation_result do_cmd_light_ui_demo(struct light_cli_invocation *invoke)
+{
+        // the bare root command does nothing on its own; it exists to hang subcommands off
+        return Result_Success;
+}
+static struct light_cli_invocation_result do_cmd_light_ui_demo_backlight(struct light_cli_invocation *invoke)
+{
+        const uint8_t *value = light_cli_invocation_get_arg_value(invoke, 0);
+
+        if(!value) {
+                light_error("backlight: expected a level in 0..%d", LIGHT_BACKLIGHT_LEVEL_MAX);
+                return Result_Error;
+        }
+        //   parsed by hand rather than with strtol: the input is at most four digits, and this
+        // reports a bad one precisely rather than silently yielding zero the way atoi() would
+        uint32_t level = 0;
+        for(const uint8_t *p = value; *p; p++) {
+                if(*p < '0' || *p > '9') {
+                        light_error("backlight: '%s' is not a number", value);
+                        return Result_Error;
+                }
+                level = (level * 10) + (uint32_t)(*p - '0');
+                if(level > LIGHT_BACKLIGHT_LEVEL_MAX) {
+                        light_error("backlight: level %s exceeds the maximum of %d",
+                                        value, LIGHT_BACKLIGHT_LEVEL_MAX);
+                        return Result_Error;
+                }
+        }
+        if(!_backlight_main) {
+                light_error("backlight: no backlight device");
+                return Result_Error;
+        }
+        light_info("backlight: setting level to %d", level);
+        light_backlight_set_level(_backlight_main, (uint16_t) level);
+
+        return Result_Success;
+}
+//   asks the demo's periodic task to return LF_STATUS_SHUTDOWN, which ends the scheduler loop
+// and starts the orderly unload. A request rather than anything immediate, because this
+// handler runs inside cli_task() and the tail of the current scheduler pass should still
+// happen; the demo task answers on its next tick, which is also what guarantees the "winding
+// down" line below is queued while the log drain is still running to print it. What the board
+// does once the framework has wound down is each app's own business, in its main() after
+// light_framework_run() returns -- the touch169 app darkens the panel and drops into BOOTSEL
+static struct light_cli_invocation_result do_cmd_light_ui_demo_shutdown(struct light_cli_invocation *invoke)
+{
+        light_info("shutdown: winding down at the console's request");
+        light_ui_demo_request_shutdown();
+        return Result_Success;
+}
+//   interactive discoverability: "help" lists the subcommands and what they take. Against the
+// root command, so it stays correct as commands are added rather than being a hand-kept list
+static struct light_cli_invocation_result do_cmd_light_ui_demo_help(struct light_cli_invocation *invoke)
+{
+        light_cli_print_command_help(&cmd_light_ui_demo);
+        return Result_Success;
+}
+//   the root name has to match the first token of LIGHT_BOOT_COMMAND: process_command_line()
+// treats argv[0] as the root command, exactly as a shell command line does
+Light_Command_Define(cmd_light_ui_demo, &root_command, "light_ui_demo",
+                        "commands for the shared light_ui demo", do_cmd_light_ui_demo, 0, 0);
+Light_Command_Define(cmd_light_ui_demo_backlight, &cmd_light_ui_demo, "backlight",
+                        "sets the panel backlight level", do_cmd_light_ui_demo_backlight, 1, 1);
+Light_Command_Define(cmd_light_ui_demo_shutdown, &cmd_light_ui_demo, "shutdown",
+                        "winds down the framework and shuts the device down", do_cmd_light_ui_demo_shutdown, 0, 0);
+Light_Command_Define(cmd_light_ui_demo_help, &cmd_light_ui_demo, "help",
+                        "lists the commands this console accepts", do_cmd_light_ui_demo_help, 0, 0);
+
+#if LIGHT_PLATFORM_USB_ON_CORE1
+//   the console feeder: pops at most ONE completed line per tick from the core 1 USB worker
+// (which reads, echoes and line-edits at its end -- core 0 must never touch the CDC endpoints
+// itself) and queues it for cli_task() to dispatch on a later tick. One per tick is the
+// intended pace, not a shortcut: cli_task() drains one line per tick and is registered ahead
+// of this task, so the queue between them never holds more than a single line -- see
+// cli_task()'s own comment for why that ordering is load-bearing.
+//   compiled only where the platform's core 1 USB worker exists to read lines at all; on a
+// board without a console (po13) this is nothing, and the command tree above still serves the
+// baked boot command
+static void _poll_console(void)
+{
+        uint8_t line[LIGHT_STREAM_MAX_MSG_LENGTH];
+        if(!light_core_port_console_take_line(line, sizeof(line)))
+                return;
+        // typing at the console is handling the device, the same as touching it
+        light_ui_demo_note_activity();
+        light_cli_queue_line(&cmd_light_ui_demo, line);
+}
+#else
+static void _poll_console(void) {}
+#endif
 
 void light_ui_demo_note_activity(void)
 {
@@ -261,6 +360,10 @@ uint8_t light_ui_demo_main(struct light_application *app)
                 light_info("shutdown requested -- stopping the task loop");
                 return LF_STATUS_SHUTDOWN;
         }
+
+        // the console before the board's own inputs, so a command typed while a finger is on
+        // the glass still lands this tick; a no-op on boards compiled without a console
+        _poll_console();
 
         // every tick, not once per frame: the input modules' own periodic tasks run
         // independently of this app's frame rate and hold only one event at a time, so

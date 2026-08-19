@@ -19,6 +19,7 @@
 #include <light.h>
 #include <light_audio.h>
 #include <light_backlight.h>
+#include <light_cli.h>
 #include <light_display.h>
 #include <light_ui.h>
 #include <light_draw.h>
@@ -162,6 +163,13 @@ extern void light_ui_demo_note_activity(void);
 // What the board does once the framework has wound down (dark panel, BOOTSEL, plain halt) is
 // each app's own business, in its main() after light_framework_run() returns
 extern void light_ui_demo_request_shutdown(void);
+
+//   the shared demo's root command -- "light_ui_demo", matching the first token of
+// LIGHT_BOOT_COMMAND. The shared subcommands (backlight, shutdown, help) live in the common
+// app.c beside it; an app with board-specific commands hangs them off this root, and the
+// interactive console (on boards that have one) and the baked boot command both dispatch
+// against it
+Light_Command_Declare(cmd_light_ui_demo, &root_command);
 
 // --- provided by light_ui_demo_common, referenced by each app's Light_Application_Define ---
 // the module dependency list has to name the input modules the board actually has
