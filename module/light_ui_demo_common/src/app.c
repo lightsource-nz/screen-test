@@ -23,6 +23,16 @@ struct audio_device *_audio_main;
 static uint32_t last_activity_ms;
 static bool backlight_dimmed;
 
+// set by light_ui_demo_request_shutdown(), read once per tick by light_ui_demo_main(). no
+// atomics needed: both ends run on the main task loop -- a command handler runs inside
+// cli_task(), which is a periodic task like the demo's own
+static bool shutdown_requested;
+
+void light_ui_demo_request_shutdown(void)
+{
+        shutdown_requested = true;
+}
+
 void light_ui_demo_note_activity(void)
 {
         last_activity_ms = light_platform_get_time_since_init();
@@ -243,6 +253,15 @@ void light_ui_demo_event(const struct light_module *module, uint8_t event, void 
 
 uint8_t light_ui_demo_main(struct light_application *app)
 {
+        //   checked first, so a shutdown requested on the previous tick ends the loop before
+        // another frame is rendered. Returning the signal -- rather than the requester calling
+        // exit() or similar -- is what lets light_framework_run() do its orderly unload and
+        // final log flush
+        if(shutdown_requested) {
+                light_info("shutdown requested -- stopping the task loop");
+                return LF_STATUS_SHUTDOWN;
+        }
+
         // every tick, not once per frame: the input modules' own periodic tasks run
         // independently of this app's frame rate and hold only one event at a time, so
         // collecting at frame rate could drop one

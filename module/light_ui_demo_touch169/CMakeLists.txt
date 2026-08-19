@@ -30,8 +30,8 @@ target_link_libraries(
         light_audio
         light_backlight
         light_draw
-        # the board has no console, so this is here for the build-time command baked in by
-        # LIGHT_BOOT_COMMAND rather than for anything typed at runtime
+        # dispatches both the build-time command baked in by LIGHT_BOOT_COMMAND and the lines
+        # typed at the USB CDC console at runtime (see _poll_console() in app.c)
         light_cli
         light_core
 )

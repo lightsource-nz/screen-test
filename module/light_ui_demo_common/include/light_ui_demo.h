@@ -155,6 +155,14 @@ extern struct audio_device *_audio_main;
 // shared demo owns the timer; only the app knows what counts as input on its board
 extern void light_ui_demo_note_activity(void);
 
+//   asks the demo's periodic task to return LF_STATUS_SHUTDOWN on its next tick, which is what
+// ends light_framework_run()'s scheduler loop and starts the orderly unload. A request rather
+// than a direct return because the natural caller is a command handler -- and a command runs
+// inside cli_task(), whose return value belongs to the CLI, not to the command that asked.
+// What the board does once the framework has wound down (dark panel, BOOTSEL, plain halt) is
+// each app's own business, in its main() after light_framework_run() returns
+extern void light_ui_demo_request_shutdown(void);
+
 // --- provided by light_ui_demo_common, referenced by each app's Light_Application_Define ---
 // the module dependency list has to name the input modules the board actually has
 // (light_button, light_touch, or neither), so each app owns its own application define and
