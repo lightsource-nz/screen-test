@@ -21,7 +21,7 @@
 #include <light_backlight.h>
 #include <light_display.h>
 #include <light_ui.h>
-#include <rend.h>
+#include <light_draw.h>
 
 #include <stdint.h>
 
@@ -40,7 +40,7 @@
 #define LIGHT_UI_DEMO_RENDER_BPP        1
 #endif
 #ifndef LIGHT_UI_DEMO_RENDER_ROTATION
-#define LIGHT_UI_DEMO_RENDER_ROTATION   REND_ROTATE_90
+#define LIGHT_UI_DEMO_RENDER_ROTATION   LIGHT_DRAW_ROTATE_90
 #endif
 
 #ifndef LIGHT_UI_DEMO_TITLE
@@ -172,6 +172,6 @@ extern void __light_ui_demo_input_poll(void);
 // the font labels are rendered in. rendered at build time by crush, whose generated symbol
 // name embeds the pixel size -- and the right pixel size differs per panel -- so the font
 // cannot be named by shared code
-extern const rend_font_t *__light_ui_demo_font(void);
+extern const light_draw_font_t *__light_ui_demo_font(void);
 
 #endif

@@ -3,7 +3,7 @@
 #include <light_backlight.h>
 #include <light_display.h>
 #include <light_platform.h>
-#include <rend.h>
+#include <light_draw.h>
 #include <module/mod_light_canvas.h>
 #include <module/mod_light_display.h>
 #include <module/mod_light_backlight.h>
@@ -47,7 +47,7 @@ void screentest_calib169_event(const struct light_module *module, uint8_t event,
 uint8_t screentest_calib169_main(struct light_application *app);
 
 Light_Application_Define(screentest_calib169, screentest_calib169_event, screentest_calib169_main,
-                                &rend,
+                                &light_draw,
                                 &light_display,
                                 &light_canvas,
                                 &light_backlight,
@@ -55,7 +55,7 @@ Light_Application_Define(screentest_calib169, screentest_calib169_event, screent
 
 static struct display_device *_display;
 static struct backlight_device *_backlight;
-static struct rend_context *render;
+static struct light_draw_context *render;
 static struct canvas_context *canvas;
 
 static uint16_t _radius = CALIB_RADIUS_MIN;
@@ -69,20 +69,20 @@ void main(int argc, char **argv)
 
 static void _draw_pattern(void)
 {
-        rend_draw_clear(render);
+        light_draw_draw_clear(render);
 
         int16_t x0 = CALIB_INSET, y0 = CALIB_INSET;
         int16_t x1 = (int16_t)render->dim_x - 1 - CALIB_INSET;
         int16_t y1 = (int16_t)render->dim_y - 1 - CALIB_INSET;
-        rend_draw_rect_rounded(render, (rend_point2d) { (uint16_t)x0, (uint16_t)y0 },
-                                       (rend_point2d) { (uint16_t)x1, (uint16_t)y1 },
+        light_draw_draw_rect_rounded(render, (light_draw_point2d) { (uint16_t)x0, (uint16_t)y0 },
+                                       (light_draw_point2d) { (uint16_t)x1, (uint16_t)y1 },
                                        _radius, false);
 
         // the number goes in the middle, where no corner can ever swallow it -- the whole
         // point is that it stays readable at radii where the corners do not
         uint8_t buf[8];
         snprintf((char *)buf, sizeof(buf), "%u", (unsigned)_radius);
-        const rend_font_t *font = render->font;
+        const light_draw_font_t *font = render->font;
         if(!font)
                 return;
         size_t len = 0;
@@ -90,29 +90,29 @@ static void _draw_pattern(void)
                 len++;
         int16_t tx = (int16_t)((render->dim_x - len * font->char_width) / 2);
         int16_t ty = (int16_t)((render->dim_y - font->char_height) / 2);
-        rend_draw_text(render, (rend_point2d) { (uint16_t)tx, (uint16_t)ty }, buf);
+        light_draw_draw_text(render, (light_draw_point2d) { (uint16_t)tx, (uint16_t)ty }, buf);
 
         // short ticks on the centre lines, so it is obvious whether the straight edges
         // themselves are reaching the glass -- if even those are clipped, the problem is an
         // offset rather than a corner radius
-        rend_draw_line(render, (rend_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)y0 },
-                               (rend_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)(y0 + 10) }, true);
-        rend_draw_line(render, (rend_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)(y1 - 10) },
-                               (rend_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)y1 }, true);
-        rend_draw_line(render, (rend_point2d) { (uint16_t)x0, (uint16_t)(render->dim_y / 2) },
-                               (rend_point2d) { (uint16_t)(x0 + 10), (uint16_t)(render->dim_y / 2) }, true);
-        rend_draw_line(render, (rend_point2d) { (uint16_t)(x1 - 10), (uint16_t)(render->dim_y / 2) },
-                               (rend_point2d) { (uint16_t)x1, (uint16_t)(render->dim_y / 2) }, true);
+        light_draw_draw_line(render, (light_draw_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)y0 },
+                               (light_draw_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)(y0 + 10) }, true);
+        light_draw_draw_line(render, (light_draw_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)(y1 - 10) },
+                               (light_draw_point2d) { (uint16_t)(render->dim_x / 2), (uint16_t)y1 }, true);
+        light_draw_draw_line(render, (light_draw_point2d) { (uint16_t)x0, (uint16_t)(render->dim_y / 2) },
+                               (light_draw_point2d) { (uint16_t)(x0 + 10), (uint16_t)(render->dim_y / 2) }, true);
+        light_draw_draw_line(render, (light_draw_point2d) { (uint16_t)(x1 - 10), (uint16_t)(render->dim_y / 2) },
+                               (light_draw_point2d) { (uint16_t)x1, (uint16_t)(render->dim_y / 2) }, true);
 }
 
 void screentest_calib169_event(const struct light_module *module, uint8_t event, void *arg)
 {
         switch(event) {
         case LF_EVENT_MODULE_LOAD:;
-                render = rend_context_create("calib169_render",
+                render = light_draw_context_create("calib169_render",
                                 ST_DISPLAY_WIDTH, ST_DISPLAY_HEIGHT, 16);
-                rend_context_set_rotation(render, REND_ROTATE_0);
-                rend_context_set_font(render, &TypeLightSans_ttf_16px_font);
+                light_draw_context_set_rotation(render, LIGHT_DRAW_ROTATE_0);
+                light_draw_context_set_font(render, &TypeLightSans_ttf_16px_font);
 
                 _display = screentest_hw_ws_touch169_display();
                 _backlight = screentest_hw_ws_touch169_backlight();

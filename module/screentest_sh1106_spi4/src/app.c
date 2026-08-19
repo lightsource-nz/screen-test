@@ -5,7 +5,7 @@
 
 #include "screentest_internal.h"
 
-static struct rend_context *render;
+static struct light_draw_context *render;
 static struct display_device *display[ST_DISPLAY_COUNT];
 
 static void screentest_event(const struct light_module *module, uint8_t event, void *arg);
@@ -16,7 +16,7 @@ static void screentest_set_frame_rate(uint32_t frame_rate);
 // defines one generic 128x64 display with sh1106 driver, on SPI port 0
 
 Light_Application_Define(screentest, screentest_event, screentest_main,
-                                &rend,
+                                &light_draw,
                                 &light_display,
                                 &light_display_sh1106,
                                 &light_core);
@@ -37,7 +37,7 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
 {
         switch(event) {
         case LF_EVENT_MODULE_LOAD:;
-                render = rend_context_create(
+                render = light_draw_context_create(
                         "screentest_render_main", 128, 64, 1);
                 render->point_radius = 2;
                 frame_counter = 0;
@@ -70,9 +70,9 @@ static uint8_t screentest_main(struct light_application *app)
         if(now >= next_frame) {
                 next_frame += frame_interval_ms;
                 frame_counter++;
-//              rend_draw_point(display->render_ctx, (rend_point2d) {64, 32});
-                rend_draw_circle(render, (rend_point2d) {64, 32}, 10, true);
-//              rend_debug_buffer_print_stdout(display->render_ctx);
+//              light_draw_draw_point(display->render_ctx, (light_draw_point2d) {64, 32});
+                light_draw_draw_circle(render, (light_draw_point2d) {64, 32}, 10, true);
+//              light_draw_debug_buffer_print_stdout(display->render_ctx);
 
                 for(uint8_t i = 0; i < ST_DISPLAY_COUNT; i++) {
                         light_display_command_update(display[i]);

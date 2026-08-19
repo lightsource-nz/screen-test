@@ -13,7 +13,7 @@
 #define LIGHT_UI_DEMO_RENDER_WIDTH      ST_DISPLAY_WIDTH
 #define LIGHT_UI_DEMO_RENDER_HEIGHT     ST_DISPLAY_HEIGHT
 #define LIGHT_UI_DEMO_RENDER_BPP        16
-#define LIGHT_UI_DEMO_RENDER_ROTATION   REND_ROTATE_0
+#define LIGHT_UI_DEMO_RENDER_ROTATION   LIGHT_DRAW_ROTATE_0
 
 // a roomier gap than the OLED rigs' 2px: rows here are ~60px tall, so 2px would read as the
 // buttons being fused together

@@ -24,6 +24,6 @@ target_link_libraries(
         light_backlight
         light_display
         light_touch
-        rend
+        light_draw
         light_core
 )

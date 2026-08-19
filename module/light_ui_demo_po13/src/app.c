@@ -15,13 +15,13 @@
 // second panel or read the second key, not both -- and this app is the one that needs keys
 //
 // its light_ui_demo_config.h is empty: light_ui_demo_common's defaults (64x128, 1bpp,
-// REND_ROTATE_90, one display) are already this board's real geometry
+// LIGHT_DRAW_ROTATE_90, one display) are already this board's real geometry
 
 // named per-app rather than after the shared demo: this define lives in each app precisely
 // so it can name its own dependencies, and the name it gives the application is what
 // light_module_get_name() reports in the log, so it should say which binary is running
 Light_Application_Define(light_ui_demo_po13, light_ui_demo_event, light_ui_demo_main,
-                                &rend,
+                                &light_draw,
                                 &light_display,
                                 &light_ui,
                                 &light_button,
@@ -36,7 +36,7 @@ void main(int argc, char **argv)
         light_framework_run(argc, argv);
 }
 
-const rend_font_t *__light_ui_demo_font(void)
+const light_draw_font_t *__light_ui_demo_font(void)
 {
         // 8px rather than the 16px face the circle-demo rigs' fonts use: at 12x19 px per
         // glyph a 128x64 logical canvas fits barely three rows of ten characters, leaving

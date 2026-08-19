@@ -44,7 +44,7 @@
 #define ST_RENDER_BPP                   1
 #endif
 #ifndef ST_RENDER_ROTATION
-#define ST_RENDER_ROTATION              REND_ROTATE_90
+#define ST_RENDER_ROTATION              LIGHT_DRAW_ROTATE_90
 #endif
 
 // where the animated circle starts, centred in the logical (post-rotation) canvas

@@ -98,9 +98,9 @@
                 .sign = { 1, 1, -1 } \
         })
 
-// maps a device orientation onto the rend rotation that keeps the interface upright. lives
+// maps a device orientation onto the light_draw rotation that keeps the interface upright. lives
 // here rather than in light_ui because it depends on the PANEL's native orientation: this
-// one is natively portrait (240x280 with REND_ROTATE_0), so portrait needs no rotation at
+// one is natively portrait (240x280 with LIGHT_DRAW_ROTATE_0), so portrait needs no rotation at
 // all. a landscape panel would need every entry shifted by 90 degrees.
 //
 // FACE_UP/FACE_DOWN deliberately have no entry -- a board lying flat has no upright
@@ -113,15 +113,15 @@
 // turn the board CLOCKWISE. screen-right now points world-DOWN, and an accelerometer axis
 // pointing down reads -1g, so device X goes negative -- which light_imu classifies as
 // LANDSCAPE_L. for the interface to read upright in that position its logical top edge has
-// to sit along the panel's LEFT edge, and REND_ROTATE_270 is the transform that puts it
+// to sit along the panel's LEFT edge, and LIGHT_DRAW_ROTATE_270 is the transform that puts it
 // there (phys_x = y, so logical y=0 maps to phys_x=0). hence L -> 270, and R -> 90.
 //
 // portrait needs no rotation because this panel is natively portrait; a landscape panel
 // would shift every entry by 90 degrees
-#define ST_IMU_ROTATION_PORTRAIT        REND_ROTATE_0
-#define ST_IMU_ROTATION_PORTRAIT_FLIP   REND_ROTATE_180
-#define ST_IMU_ROTATION_LANDSCAPE_L     REND_ROTATE_270
-#define ST_IMU_ROTATION_LANDSCAPE_R     REND_ROTATE_90
+#define ST_IMU_ROTATION_PORTRAIT        LIGHT_DRAW_ROTATE_0
+#define ST_IMU_ROTATION_PORTRAIT_FLIP   LIGHT_DRAW_ROTATE_180
+#define ST_IMU_ROTATION_LANDSCAPE_L     LIGHT_DRAW_ROTATE_270
+#define ST_IMU_ROTATION_LANDSCAPE_R     LIGHT_DRAW_ROTATE_90
 
 // the passive piezo buzzer, driven as a PWM output (see light_audio). read off the board
 // schematic rather than guessed -- leaving this undefined is the safe default, and

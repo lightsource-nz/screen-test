@@ -1,12 +1,10 @@
 cmake_minimum_required(VERSION 3.18)
 
 # front-load initialisers for light and pico-sdk
-#   CACHE, not a normal variable, and the distinction is load-bearing. module/rend/CMakeLists.txt
-# also declares LIGHT_PATH with `set(... CACHE PATH ...)`, defaulting it relative to ITSELF --
-# which lands on screen-test/module/light_framework_mk3, a path that does not exist. Creating a
-# cache entry REMOVES any normal variable of the same name so the cached value is visible, so a
-# plain `set(LIGHT_PATH ...)` here is silently discarded the moment rend is added, and the build
-# fails looking for light_preinit.cmake under module/.
+#   CACHE, not a normal variable: a plain `set(LIGHT_PATH ...)` here would be silently discarded
+# the moment anything downstream declares LIGHT_PATH as its own cache entry (as every top-level
+# light project's own CMakeLists.txt does), which removes any normal variable of the same name
+# so only the cached value is visible.
 #   the fallback below always cached its value, so this only bites when LIGHT_PATH is set in the
 # ENVIRONMENT -- which is exactly what the script layer does. Every existing build tree here was
 # configured before that was true, which is why they work and a fresh one did not.
@@ -24,15 +22,15 @@ if(${_LIGHT_PATH_RELATIVE})
         get_filename_component(LIGHT_PATH "${LIGHT_PATH}" REALPATH BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 endif()
 
-# rend also defaults this, but relative to ITSELF -- and rend lives at module/rend here, so
-# its guess lands on screen-test/module/font-crusher and misses a checkout sitting beside
-# this project. Findcrush.cmake then quietly fetches font-crusher from GitHub instead, so a
-# local edit to the crush tooling silently has no effect on this build. resolved here first,
-# as a sibling of the project root, exactly as LIGHT_PATH is above
-#   CACHE for the same reason as LIGHT_PATH above: rend declares FONT_CRUSHER_PATH as a cache
-# entry too, so an uncached value here is removed as soon as rend is added and its own guess
-# wins -- at which point Findcrush.cmake fetches font-crusher from GitHub and local edits to the
-# crush tooling silently stop affecting this build
+#   light_draw (module/light_draw inside the light_display group, resolved below) also defaults
+# FONT_CRUSHER_PATH, but relative to ITSELF -- two directories deeper than this project's own
+# root, so its guess only lands correctly when light_display itself resolves as a proper sibling
+# checkout. Resolved here first, as a sibling of THIS project's root, so it is correct regardless
+# of where light_display ends up.
+#   CACHE for the same reason as LIGHT_PATH above: light_draw declares FONT_CRUSHER_PATH as a
+# cache entry too, so an uncached value here would be removed as soon as it is added and its own
+# guess would win -- at which point Findcrush.cmake fetches font-crusher from GitHub and local
+# edits to the crush tooling silently stop affecting this build
 if(DEFINED ENV{FONT_CRUSHER_PATH} AND (NOT FONT_CRUSHER_PATH))
     set(FONT_CRUSHER_PATH "$ENV{FONT_CRUSHER_PATH}" CACHE PATH "path to the root directory of the font-crusher project")
 endif()
@@ -56,9 +54,6 @@ project(screen-test C CXX ASM)
 include(CTest)
 
 add_subdirectory(${LIGHT_PATH}/ light_framework)
-
-# modules
-add_subdirectory(module/rend)
 
 #   the display group -- core, six panel drivers and backlight. These were seven separate
 # repositories and seven submodule pointers here, kept in step by hand; they are now one

@@ -28,7 +28,7 @@ target_link_libraries(
         light_ui_demo_po13_font
         light_button
         light_ui
-        rend
+        light_draw
         light_core
 )
 

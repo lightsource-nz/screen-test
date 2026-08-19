@@ -20,6 +20,6 @@ target_link_libraries(
         light_backlight
         light_ui
         light_display
-        rend
+        light_draw
         light_core
 )

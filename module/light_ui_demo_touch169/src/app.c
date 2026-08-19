@@ -21,7 +21,7 @@
 // so it can name its own dependencies, and the name it gives the application is what
 // light_module_get_name() reports in the log, so it should say which binary is running
 Light_Application_Define(light_ui_demo_touch169, light_ui_demo_event, light_ui_demo_main,
-                                &rend,
+                                &light_draw,
                                 &light_display,
                                 &light_ui,
                                 &light_touch,
@@ -103,7 +103,7 @@ void main(int argc, char **argv)
         light_framework_run(0, NULL);
 }
 
-const rend_font_t *__light_ui_demo_font(void)
+const light_draw_font_t *__light_ui_demo_font(void)
 {
         // 16px here, where the po13 rig needs 8px: this panel is 240x280, so a 12x19 glyph
         // still leaves twenty characters per row and four comfortable button rows
@@ -190,7 +190,7 @@ void __light_ui_demo_input_poll(void)
         //   the gesture's ENDPOINTS are what matter, not its type. light_touch classifies in
         // the panel's frame, which is fixed to the glass, while the swipe was made relative to
         // the interface, which rotates with the board -- so TOUCH_GESTURE_SWIPE_RIGHT means
-        // "right" only at REND_ROTATE_0, and taking it at face value made this work in portrait
+        // "right" only at LIGHT_DRAW_ROTATE_0, and taking it at face value made this work in portrait
         // and act on the wrong axis in landscape. light_ui_swipe_direction() untransforms both
         // ends through the same path a tap takes and answers in the frame the user is using
         struct touch_gesture gesture;

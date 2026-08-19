@@ -27,7 +27,7 @@ target_link_libraries(
         light_canvas
         light_display
         light_backlight
-        rend
+        light_draw
         light_core
 )
 

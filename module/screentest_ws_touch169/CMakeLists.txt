@@ -15,7 +15,7 @@ target_link_libraries(
         screentest_ws_touch169 PUBLIC
         screentest_common
         screentest_hw_ws_touch169
-        rend
+        light_draw
         light_core
 )
 

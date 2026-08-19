@@ -96,13 +96,13 @@
                 Ctest  = $true
         }
 
-        #   'auto' rather than a glob: this project's host test binaries sit at three different
-        # depths (light_audio/, rend/ and light_framework/test/), so discovery beats enumeration.
+        #   'auto' rather than a glob: this project's host test binaries sit at different
+        # depths (light_audio/ and light_framework/test/), so discovery beats enumeration.
         #   HOST_OS explicitly, because the coverage build is a plain Linux build -- the pico_sdk
         # host mode the conf-screentest-host-debug preset uses is not available there. What that
-        # measures is the portable module code (rend geometry, light_audio conversion, canvas),
-        # which is exactly the part with host tests; the drivers and ports are target-only and
-        # will not appear at all
+        # measures is the portable module code (light_audio conversion, canvas), which is exactly
+        # the part with host tests; the drivers and ports are target-only and will not appear at
+        # all
         Coverage = @{
                 Objects     = 'auto'
                 IgnoreRegex = '(/lib/|/usr/|sanitizers/|_deps/|/freetype/|/jansson/)'

@@ -15,7 +15,7 @@ target_link_libraries(
         screentest_sh1106_i2c PUBLIC
         light_display
         light_display_sh1106
-        rend
+        light_draw
         light_core
 )
 

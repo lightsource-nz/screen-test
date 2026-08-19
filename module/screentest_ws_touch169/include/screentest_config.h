@@ -17,7 +17,7 @@
 #define ST_RENDER_WIDTH                 ST_DISPLAY_WIDTH
 #define ST_RENDER_HEIGHT                ST_DISPLAY_HEIGHT
 #define ST_RENDER_BPP                   16
-#define ST_RENDER_ROTATION              REND_ROTATE_0
+#define ST_RENDER_ROTATION              LIGHT_DRAW_ROTATE_0
 
 // centred on this panel's much larger canvas. the shared default centres on the OLED
 // geometry, which is nowhere near the middle here

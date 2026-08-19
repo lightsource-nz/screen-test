@@ -9,7 +9,7 @@
 
 #include "screentest_internal.h"
 
-static struct rend_context *render;
+static struct light_draw_context *render;
 static struct canvas_context *canvas;
 struct display_device *_display[ST_DISPLAY_COUNT];
 struct touch_device *_touch_main;
@@ -28,7 +28,7 @@ static bool slide_active;
 
 // the box the circle occupies, at its MAXIMUM radius rather than its current one, so a
 // shrinking circle still invalidates its own previous extent. signed, because a circle near
-// an edge extends past it and rend_point2d's uint16_t would wrap instead of clipping --
+// an edge extends past it and light_draw_point2d's uint16_t would wrap instead of clipping --
 // light_canvas takes signed regions for exactly this reason and clips them itself.
 //
 // only where the circle is NOW: light_canvas re-invalidates whatever the previous frame
@@ -48,7 +48,7 @@ static uint8_t screentest_main(struct light_application *app);
 void __screentest_hardware_init();
 
 Light_Application_Define(screentest, screentest_event, screentest_main,
-                                &rend,
+                                &light_draw,
                                 &light_canvas,
                                 &light_display,
                                 &light_imu,
@@ -195,9 +195,9 @@ static void screentest_event(const struct light_module *module, uint8_t event, v
                 // no rotation transform, which would mismatch the real device buffers and
                 // scramble pixel positions (matches crossfire's own working setup for the same
                 // panel -- see crossfire.c's crossfire_display_init())
-                render = rend_context_create(
+                render = light_draw_context_create(
                         "screentest_render_main", ST_RENDER_WIDTH, ST_RENDER_HEIGHT, ST_RENDER_BPP);
-                rend_context_set_rotation(render, ST_RENDER_ROTATION);
+                light_draw_context_set_rotation(render, ST_RENDER_ROTATION);
                 render->point_radius = 2;
                 light_debug("passing control to display hardware setup function","");
                 __screentest_hardware_init();
@@ -265,7 +265,7 @@ static uint8_t screentest_main(struct light_application *app)
         // the canvas owns the frame deadline, the buffer swap and the check for a display
         // still reading the buffer -- on false there is simply nothing to do this tick
         if(light_canvas_frame_begin(canvas)) {
-                rend_draw_circle(render, (rend_point2d) {(uint16_t)circle_x, (uint16_t)circle_y},
+                light_draw_draw_circle(render, (light_draw_point2d) {(uint16_t)circle_x, (uint16_t)circle_y},
                                 _circle_radius(now), true);
                 // the whole buffer was cleared and redrawn, but the only pixels that can
                 // differ from what the panel already shows are the circle's, so only a box

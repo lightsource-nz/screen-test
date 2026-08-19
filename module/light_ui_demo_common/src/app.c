@@ -62,7 +62,7 @@ static const uint8_t *const _label_on[LIGHT_UI_DEMO_BUTTON_COUNT] = {
 };
 static bool _toggled[LIGHT_UI_DEMO_BUTTON_COUNT];
 
-static struct rend_context *render;
+static struct light_draw_context *render;
 static struct canvas_context *canvas;
 
 static void _on_press(struct ui_button *btn, void *user_data)
@@ -193,13 +193,13 @@ void light_ui_demo_event(const struct light_module *module, uint8_t event, void 
 {
         switch(event) {
         case LF_EVENT_MODULE_LOAD:;
-                render = rend_context_create("light_ui_demo_render",
+                render = light_draw_context_create("light_ui_demo_render",
                                 LIGHT_UI_DEMO_RENDER_WIDTH, LIGHT_UI_DEMO_RENDER_HEIGHT, LIGHT_UI_DEMO_RENDER_BPP);
-                rend_context_set_rotation(render, LIGHT_UI_DEMO_RENDER_ROTATION);
+                light_draw_context_set_rotation(render, LIGHT_UI_DEMO_RENDER_ROTATION);
                 // must happen before any widget is created: light_ui reads char_width/
                 // char_height off the context to lay out and truncate labels, and
-                // rend_draw_text() is a silent no-op with no font set
-                rend_context_set_font(render, __light_ui_demo_font());
+                // light_draw_draw_text() is a silent no-op with no font set
+                light_draw_context_set_font(render, __light_ui_demo_font());
 
                 light_debug("passing control to board hardware setup function","");
                 __light_ui_demo_hardware_init();

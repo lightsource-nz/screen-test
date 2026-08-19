@@ -7,7 +7,7 @@ target_include_directories(
 )
 
 # no screentest.h of its own: its screentest_config.h is empty, so it picks up
-# screentest_common's defaults (64x128 1bpp, REND_ROTATE_90), which are this board's real
+# screentest_common's defaults (64x128 1bpp, LIGHT_DRAW_ROTATE_90), which are this board's real
 # geometry. its pinout comes from screentest_hw_po13 instead
 target_sources(
         screentest_po13 PUBLIC
@@ -18,7 +18,7 @@ target_link_libraries(
         screentest_po13 PUBLIC
         screentest_common
         screentest_hw_po13
-        rend
+        light_draw
         light_core
 )
 

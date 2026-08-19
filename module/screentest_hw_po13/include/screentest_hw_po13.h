@@ -10,7 +10,7 @@
 // light_display_po13.h (PO13_PIN_*) -- only what this RIG adds on top of a bare board is
 // here.
 //
-// the render geometry this board wants (64x128, 1bpp, REND_ROTATE_90) is already
+// the render geometry this board wants (64x128, 1bpp, LIGHT_DRAW_ROTATE_90) is already
 // screentest_common's screentest.h default, so there is deliberately no ST_RENDER_*
 // override here
 

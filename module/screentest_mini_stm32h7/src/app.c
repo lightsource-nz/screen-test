@@ -3,7 +3,7 @@
  *  screen-test on the WeAct MiniSTM32H7xx
  *
  *  The first thing to put pixels on this board's panel, and deliberately the simplest one that
- *  exercises the whole path: rend renders into a 160x80 16bpp buffer, light_canvas paces and
+ *  exercises the whole path: light_draw renders into a 160x80 16bpp buffer, light_canvas paces and
  *  flushes frames, light_display drives the ST7735S through light_ioport's new STM32 SPI
  *  transport.
  *
@@ -19,10 +19,10 @@
 #include <light_display.h>
 #include <screentest_hw_mini_stm32h7.h>
 #include <light_backlight.h>
-#include <rend.h>
+#include <light_draw.h>
 
-// the module descriptors named in Light_Application_Define() below. rend declares its own in
-// rend.h; the rest live in a module/ subheader each
+// the module descriptors named in Light_Application_Define() below. light_draw declares its own in
+// light_draw.h; the rest live in a module/ subheader each
 #include <module/mod_light_canvas.h>
 #include <module/mod_light_display.h>
 #include <module/mod_light_ioport.h>
@@ -40,7 +40,7 @@ Light_Application_Define(screentest_mini_stm32h7, app_event, app_main,
                                 &light_ioport,
                                 &light_display_st7735,
                                 &light_backlight,
-                                &rend,
+                                &light_draw,
                                 &light_core);
 
 #define FRAME_RATE              20
@@ -56,7 +56,7 @@ Light_Application_Define(screentest_mini_stm32h7, app_event, app_main,
 static struct display_device *_display;
 static struct backlight_device *_backlight;
 static struct canvas_context *_canvas;
-static struct rend_context *_render;
+static struct light_draw_context *_render;
 static uint32_t _next_toggle_ms;
 static bool _led_on;
 static uint16_t _sweep_x;
@@ -86,7 +86,7 @@ static void app_event(const struct light_module *mod, uint8_t event, void *arg)
                 ST_LED_PORT->MODER |= (1U << (ST_LED_PIN * 2));
                 _led_write(false);
 
-                _render = rend_context_create("screentest_render",
+                _render = light_draw_context_create("screentest_render",
                                 ST_DISPLAY_WIDTH, ST_DISPLAY_HEIGHT, ST_DISPLAY_BPP);
 
                 _display = screentest_hw_mini_stm32h7_display();
@@ -135,21 +135,21 @@ static uint8_t app_main(struct light_application *app)
 #endif
 
         if(light_canvas_frame_begin(_canvas)) {
-                rend_draw_clear(_render);
+                light_draw_draw_clear(_render);
 
                 //   a border on the outermost pixel ring. This is the offset test: with the
                 // GDDRAM offsets right it sits flush against all four edges of the glass, and
                 // with them wrong it is clipped on two sides with noise on the others
-                rend_draw_rect(_render,
-                        (rend_point2d){ 0, 0 },
-                        (rend_point2d){ ST_DISPLAY_WIDTH - 1, ST_DISPLAY_HEIGHT - 1 }, false);
+                light_draw_draw_rect(_render,
+                        (light_draw_point2d){ 0, 0 },
+                        (light_draw_point2d){ ST_DISPLAY_WIDTH - 1, ST_DISPLAY_HEIGHT - 1 }, false);
 
                 // a solid block that sweeps across, which both proves frames are actually
                 // being pushed and gives a large area of known colour to check red/blue order
                 uint16_t x = _sweep_x;
-                rend_draw_rect(_render,
-                        (rend_point2d){ (uint16_t)(x + 4), 20 },
-                        (rend_point2d){ (uint16_t)(x + 28), 60 }, true);
+                light_draw_draw_rect(_render,
+                        (light_draw_point2d){ (uint16_t)(x + 4), 20 },
+                        (light_draw_point2d){ (uint16_t)(x + 28), 60 }, true);
 
                 light_canvas_invalidate_all(_canvas);
                 light_canvas_frame_end(_canvas);

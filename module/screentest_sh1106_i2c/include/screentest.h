@@ -6,7 +6,7 @@
 #include <light_display.h>
 #include <light_display_sh1106.h>
 
-#include <rend.h>
+#include <light_draw.h>
 
 #include <stdint.h>
 
@@ -27,7 +27,7 @@
 #define ST_RENDER_WIDTH                 64
 #define ST_RENDER_HEIGHT                128
 #define ST_RENDER_BPP                   1
-#define ST_RENDER_ROTATION              REND_ROTATE_90
+#define ST_RENDER_ROTATION              LIGHT_DRAW_ROTATE_90
 #define ST_RENDER_CIRCLE_X              64
 #define ST_RENDER_CIRCLE_Y              32
 

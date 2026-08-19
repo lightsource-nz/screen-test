@@ -13,7 +13,7 @@ target_link_libraries(
         light_display
         light_ioport
         light_canvas
-        rend
+        light_draw
         light_core
 )
 
