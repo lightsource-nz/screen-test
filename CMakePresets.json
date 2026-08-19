@@ -36,6 +36,16 @@
             ]
         },
         {
+            "name": "conf-screentest-pico2-debug",
+            "description": "The po13 rig since its 2026-08 rebuild on a Pico 2 (RP2350) -- the original RP2040 Picos never responded on SWD or BOOTSEL. Split by CHIP into its own tree, the same arrangement crossfire's presets use: an rp2040 tree and an rp2350 tree can coexist, where sharing build/ would force a -Force reconfigure on every board switch.",
+            "inherits": [
+                "conf-screentest-base",
+                "conf-light-pico2",
+                "conf-light-debug"
+            ],
+            "binaryDir": "${sourceDir}/build-pico2"
+        },
+        {
             "name": "conf-screentest-waveshare-touch169-debug",
             "inherits": [
                 "conf-screentest-base",
@@ -134,6 +144,11 @@
         {
             "name": "build-light_ui_demo_po13-debug",
             "configurePreset": "conf-screentest-debug",
+            "targets": ["light_ui_demo_po13"]
+        },
+        {
+            "name": "build-light_ui_demo_po13-pico2-debug",
+            "configurePreset": "conf-screentest-pico2-debug",
             "targets": ["light_ui_demo_po13"]
         },
         {

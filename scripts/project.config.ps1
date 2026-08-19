@@ -15,6 +15,9 @@
         # preset -> build tree, relative to the project root
         Trees = @{
                 'conf-screentest-debug'                         = 'build'
+                # split by CHIP, as crossfire's trees are: the po13 rig is a Pico 2 since its
+                # 2026-08 rebuild, and its tree coexists with the rp2040 one in build/
+                'conf-screentest-pico2-debug'                   = 'build-pico2'
                 'conf-screentest-host-debug'                    = 'build'
                 'conf-screentest-host-os-debug'                 = 'build-host'
                 'conf-screentest-trace'                         = 'build-trace'
@@ -30,8 +33,11 @@
         Targets = @{
                 'screentest_sh1106_spi4'   = @{ Preset = 'conf-screentest-debug'; Flash = 'uf2' }
                 'screentest_sh1106_i2c'    = @{ Preset = 'conf-screentest-debug'; Flash = 'uf2' }
-                'screentest_po13'          = @{ Preset = 'conf-screentest-debug'; Flash = 'uf2' }
-                'light_ui_demo_po13'       = @{ Preset = 'conf-screentest-debug'; Flash = 'uf2' }
+                #   the po13 rig is a Pico 2 in its SWD dock now, so both its targets build with
+                # the pico2 preset and reach the board through the probe (scripts/debug.ps1
+                # -Batch) rather than BOOTSEL
+                'screentest_po13'          = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
+                'light_ui_demo_po13'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
                 'screentest_ws_touch169'   = @{ Preset = 'conf-screentest-waveshare-touch169-debug'; Flash = 'uf2' }
                 'light_ui_demo_touch169'   = @{ Preset = 'conf-screentest-waveshare-touch169-debug'; Flash = 'uf2' }
                 # no build preset exists for this one; it is a bring-up tool for measuring the
@@ -46,6 +52,7 @@
         # which today is all of them.
         Expect = @{
                 'conf-screentest-debug'                    = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'pico' }
+                'conf-screentest-pico2-debug'              = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'pico2'; PICO_PLATFORM = 'rp2350-arm-s' }
                 'conf-screentest-host-debug'               = @{ LIGHT_PLATFORM = 'HOST'; LIGHT_BOARD = 'pico_hostmode' }
                 'conf-screentest-host-os-debug'            = @{ LIGHT_PLATFORM = 'HOST'; LIGHT_SYSTEM = 'HOST_OS' }
                 'conf-screentest-waveshare-touch169-debug' = @{ LIGHT_PLATFORM = 'TARGET'; LIGHT_BOARD = 'waveshare_rp2350_touch_lcd_1.69'; PICO_PLATFORM = 'rp2350-arm-s' }
@@ -63,6 +70,10 @@
                 'conf-screentest-debug' = @{
                         Config = 'openocd.cfg'
                         Svd    = '../pico-sdk/src/rp2040/hardware_regs/RP2040.svd'
+                }
+                'conf-screentest-pico2-debug' = @{
+                        Config = 'openocd-rp2350.cfg'
+                        Svd    = '../pico-sdk/src/rp2350/hardware_regs/RP2350.svd'
                 }
                 'conf-screentest-waveshare-touch169-debug' = @{
                         Config = 'openocd-rp2350.cfg'
