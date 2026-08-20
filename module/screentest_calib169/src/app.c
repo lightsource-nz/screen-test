@@ -1,4 +1,4 @@
-#include <screentest_hw_ws_touch169.h>
+#include <light_ui_hw_ws_touch169.h>
 #include <light_canvas.h>
 #include <light_backlight.h>
 #include <light_display.h>
@@ -114,8 +114,8 @@ void screentest_calib169_event(const struct light_module *module, uint8_t event,
                 light_draw_context_set_rotation(render, LIGHT_DRAW_ROTATE_0);
                 light_draw_context_set_font(render, &TypeLightSans_ttf_16px_font);
 
-                _display = screentest_hw_ws_touch169_display();
-                _backlight = screentest_hw_ws_touch169_backlight();
+                _display = light_ui_hw_ws_touch169_display();
+                _backlight = light_ui_hw_ws_touch169_backlight();
                 light_display_set_render_context(_display, render);
 
                 canvas = light_canvas_create(render, &_display, 1);

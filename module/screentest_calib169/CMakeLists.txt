@@ -22,7 +22,7 @@ target_sources(
 
 target_link_libraries(
         screentest_calib169 PUBLIC
-        screentest_hw_ws_touch169
+        light_ui_hw_ws_touch169
         screentest_calib169_font
         light_canvas
         light_display

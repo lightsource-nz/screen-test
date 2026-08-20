@@ -78,7 +78,7 @@ light_resolve_project(LIGHT_DISPLAY light_display MARKER module/light_display/CM
 add_subdirectory(${LIGHT_DISPLAY_PATH} light_display_group)
 
 #   the UI group -- the widget toolkit, the input and sensor drivers, canvas, audio, and the
-# board-wiring modules this project's own apps link (screentest_hw_po13/_ws_touch169 live there
+# board-wiring modules this project's own apps link (light_ui_hw_po13/_ws_touch169 live there
 # now, beside the demos that share them). These were eight separate repositories and eight
 # submodule pointers here, kept in step by hand, exactly as the display modules once were; the
 # same consolidation applies, and for the same reasons -- see the display group above.

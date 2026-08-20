@@ -2,7 +2,7 @@
 #define _SCREENTEST_CONFIG_H
 
 // board pinout and device construction (ST_DISPLAY_*, ST_TOUCH_*, ST_IMU_*)
-#include <screentest_hw_ws_touch169.h>
+#include <light_ui_hw_ws_touch169.h>
 
 // ONLY what this board does differently from screentest_common's defaults. everything not
 // named here -- frame rate, circle animation, swipe and tilt tuning -- comes from there, so
