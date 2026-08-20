@@ -32,5 +32,9 @@
 // curve is carried by the corner radius instead
 #define LIGHT_UI_DEMO_SAFE_INSET        2
 #define LIGHT_UI_DEMO_CORNER_RADIUS     (ST_DISPLAY_CORNER_RADIUS - LIGHT_UI_DEMO_SAFE_INSET)
+// tall enough for a comfortable touch target, and chosen so the list page's eight rows need
+// ~500px of a ~200px viewport -- most of the list is off-screen, which is what the scrolling
+// is there to prove
+#define LIGHT_UI_DEMO_LIST_MIN_ROW      56
 
 #endif

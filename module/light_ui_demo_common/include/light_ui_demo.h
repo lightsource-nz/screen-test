@@ -77,6 +77,14 @@
 #ifndef LIGHT_UI_DEMO_ROW_GAP
 #define LIGHT_UI_DEMO_ROW_GAP           2
 #endif
+//   the minimum row height for the scrolling-list page (pages builds only). This is the knob
+// that makes the list OVERFLOW: rows pinned at this height need more room than the window
+// has, and the excess is what the scrolling demonstrates. Sized per board because it is a
+// touch-target/legibility fact -- a value that overflows a 240x280 panel would still fit a
+// taller one
+#ifndef LIGHT_UI_DEMO_LIST_MIN_ROW
+#define LIGHT_UI_DEMO_LIST_MIN_ROW      18
+#endif
 // how often the UI is offered a chance to repaint. light_ui_render() is a no-op unless
 // something actually changed, so this bounds latency after an input rather than describing a
 // steady redraw load

@@ -4,6 +4,7 @@
 #include <light_platform.h>
 
 #include <stdint.h>
+#include <string.h>
 
 // shared light_ui demo: one framed window filling the canvas, with a stack of buttons in
 // it. each button toggles its own label between "Name" and "Name *" when activated, which
@@ -98,6 +99,38 @@ static struct light_cli_invocation_result do_cmd_light_ui_demo_help(struct light
         light_cli_print_command_help(&cmd_light_ui_demo);
         return Result_Success;
 }
+//   the button rig's two keys, available from the console: "focus next|prev" and "press".
+// This is what lets focus-driven behaviour (cycling, and the scroll-into-view it triggers on
+// an overflowing list) be exercised on a board whose only physical input is a touch panel --
+// and scripted from a host, which no arrangement of fingers can be
+static struct light_cli_invocation_result do_cmd_light_ui_demo_focus(struct light_cli_invocation *invoke)
+{
+        const uint8_t *dir = light_cli_invocation_get_arg_value(invoke, 0);
+        if(!_ui) {
+                light_error("focus: no ui context yet");
+                return Result_Error;
+        }
+        if(dir && !strcmp((const char *)dir, "prev"))
+                light_ui_input_focus_prev(_ui);
+        else if(dir && !strcmp((const char *)dir, "next"))
+                light_ui_input_focus_next(_ui);
+        else {
+                light_error("focus: expected 'next' or 'prev'");
+                return Result_Error;
+        }
+        light_ui_demo_note_activity();
+        return Result_Success;
+}
+static struct light_cli_invocation_result do_cmd_light_ui_demo_press(struct light_cli_invocation *invoke)
+{
+        if(!_ui) {
+                light_error("press: no ui context yet");
+                return Result_Error;
+        }
+        light_ui_demo_note_activity();
+        light_ui_input_activate(_ui);
+        return Result_Success;
+}
 //   the root name has to match the first token of LIGHT_BOOT_COMMAND: process_command_line()
 // treats argv[0] as the root command, exactly as a shell command line does
 Light_Command_Define(cmd_light_ui_demo, &root_command, "light_ui_demo",
@@ -108,6 +141,10 @@ Light_Command_Define(cmd_light_ui_demo_shutdown, &cmd_light_ui_demo, "shutdown",
                         "winds down the framework and shuts the device down", do_cmd_light_ui_demo_shutdown, 0, 0);
 Light_Command_Define(cmd_light_ui_demo_help, &cmd_light_ui_demo, "help",
                         "lists the commands this console accepts", do_cmd_light_ui_demo_help, 0, 0);
+Light_Command_Define(cmd_light_ui_demo_focus, &cmd_light_ui_demo, "focus",
+                        "moves the focus highlight: focus <next|prev>", do_cmd_light_ui_demo_focus, 1, 1);
+Light_Command_Define(cmd_light_ui_demo_press, &cmd_light_ui_demo, "press",
+                        "activates the focused widget", do_cmd_light_ui_demo_press, 0, 0);
 
 #if LIGHT_PLATFORM_USB_ON_CORE1
 //   the console feeder: pops at most ONE completed line per tick from the core 1 USB worker
@@ -273,10 +310,41 @@ static void _on_detail_back(struct ui_button *btn, void *user_data)
 
 Light_UI_Button_Define(_btn_more, "More >", _on_open_detail, NULL);
 
+//   the scrolling example: more rows than the window can show, each pinned at a minimum
+// height, inside a window marked UI_SCROLL_VERTICAL. Nothing here scrolls explicitly --
+// focusing an off-screen item (focus cycling, or tapping a half-visible row) is what moves
+// the list, via light_ui_set_focus()'s scroll-into-view
+Light_UI_Page_Declare(_page_list);
+
+static void _on_open_list(struct ui_button *btn, void *user_data)
+{
+        if(_audio_main)
+                light_audio_tone(_audio_main, LIGHT_UI_DEMO_CLICK_HZ, LIGHT_UI_DEMO_CLICK_MS);
+        light_ui_navigate(btn->widget.ui, &_page_list);
+}
+static void _on_list_item(struct ui_button *btn, void *user_data)
+{
+        light_info("list item %d pressed", (int)(uintptr_t)user_data);
+        if(_audio_main)
+                light_audio_tone(_audio_main, LIGHT_UI_DEMO_CLICK_HZ, LIGHT_UI_DEMO_CLICK_MS);
+}
+
+Light_UI_Button_Define(_btn_list, "List >", _on_open_list, NULL);
+
+#define LIST_ITEM(n) \
+        Light_UI_Button_Define(_btn_item_##n, "Item " #n, _on_list_item, (void *)(n), \
+                        Light_UI_MinSize(0, LIGHT_UI_DEMO_LIST_MIN_ROW))
+LIST_ITEM(1); LIST_ITEM(2); LIST_ITEM(3); LIST_ITEM(4);
+LIST_ITEM(5); LIST_ITEM(6); LIST_ITEM(7);
+// the back row is a list item like any other, and deliberately LAST: reaching it means
+// scrolling the whole list, so navigating out doubles as the end-to-end check
+Light_UI_Button_Define(_btn_list_back, "< Back", _on_detail_back, NULL,
+                Light_UI_MinSize(0, LIGHT_UI_DEMO_LIST_MIN_ROW));
+
 Light_UI_Window_Define(_demo_window, LIGHT_UI_DEMO_TITLE,
         Light_UI_Rounded(LIGHT_UI_DEMO_CORNER_RADIUS),
         Light_UI_Stack(LIGHT_UI_DEMO_ROW_GAP),
-        Light_UI_Children(&_btn_alpha, &_btn_beta, &_btn_gamma, &_btn_more));
+        Light_UI_Children(&_btn_alpha, &_btn_beta, &_btn_gamma, &_btn_more, &_btn_list));
 
 Light_UI_Label_Define(_lbl_detail, "swipe right to go back");
 Light_UI_Button_Define(_btn_back, "< Back", _on_detail_back, NULL);
@@ -285,9 +353,17 @@ Light_UI_Window_Define(_detail_window, "More",
         Light_UI_Stack(LIGHT_UI_DEMO_ROW_GAP),
         Light_UI_Children(&_lbl_detail, &_btn_back));
 
+Light_UI_Window_Define(_list_window, "List",
+        Light_UI_Rounded(LIGHT_UI_DEMO_CORNER_RADIUS),
+        Light_UI_Stack(LIGHT_UI_DEMO_ROW_GAP),
+        Light_UI_Scroll(UI_SCROLL_VERTICAL),
+        Light_UI_Children(&_btn_item_1, &_btn_item_2, &_btn_item_3, &_btn_item_4,
+                        &_btn_item_5, &_btn_item_6, &_btn_item_7, &_btn_list_back));
+
 // the main page is top-level, so back from it has nowhere to go and does nothing
 Light_UI_Page_Define(_page_main, NULL, _demo_window);
 Light_UI_Page_Define(_page_detail, &_page_main, _detail_window);
+Light_UI_Page_Define(_page_list, &_page_main, _list_window);
 
 #else
 
