@@ -27,6 +27,7 @@ jobs:
     with:
       project: screen-test
       light_display: true
+      light_ui: true
       font_crusher: true
 
   firmware:
@@ -39,12 +40,12 @@ jobs:
         include:
           - name: rp2040 (Pico + Pico-OLED 1.3)
             preset: conf-screentest-debug
-            targets: screentest_po13 light_ui_demo_po13 screentest_sh1106_i2c screentest_sh1106_spi4
+            targets: screentest_po13 screentest_sh1106_i2c screentest_sh1106_spi4
             tree: build
             pico_sdk: true
           - name: rp2350 (Waveshare Touch-LCD 1.69)
             preset: conf-screentest-waveshare-touch169-debug
-            targets: screentest_ws_touch169 light_ui_demo_touch169 screentest_calib169
+            targets: screentest_ws_touch169 screentest_calib169
             tree: build-waveshare-touch169
             pico_sdk: true
           # bare CMSIS: no Pico SDK involved at all, which is why pico_sdk is false here
@@ -60,5 +61,6 @@ jobs:
       targets: ${{ matrix.targets }}
       tree: ${{ matrix.tree }}
       light_display: true
+      light_ui: true
       font_crusher: true
       pico_sdk: ${{ matrix.pico_sdk }}

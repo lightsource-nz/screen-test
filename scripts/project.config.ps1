@@ -33,13 +33,13 @@
         Targets = @{
                 'screentest_sh1106_spi4'   = @{ Preset = 'conf-screentest-debug'; Flash = 'uf2' }
                 'screentest_sh1106_i2c'    = @{ Preset = 'conf-screentest-debug'; Flash = 'uf2' }
-                #   the po13 rig is a Pico 2 in its SWD dock now, so both its targets build with
-                # the pico2 preset and reach the board through the probe (scripts/debug.ps1
-                # -Batch) rather than BOOTSEL
+                #   the po13 rig is a Pico 2 in its SWD dock now, so its target builds with the
+                # pico2 preset and reaches the board through the probe (scripts/debug.ps1
+                # -Batch) rather than BOOTSEL.
+                #   the light_ui_demo_* apps are gone from this file entirely: they live in the
+                # light_ui group now, built and flashed from that project's own scripts
                 'screentest_po13'          = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
-                'light_ui_demo_po13'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
                 'screentest_ws_touch169'   = @{ Preset = 'conf-screentest-waveshare-touch169-debug'; Flash = 'uf2' }
-                'light_ui_demo_touch169'   = @{ Preset = 'conf-screentest-waveshare-touch169-debug'; Flash = 'uf2' }
                 # no build preset exists for this one; it is a bring-up tool for measuring the
                 # panel's corner radius
                 'screentest_calib169'      = @{ Preset = 'conf-screentest-waveshare-touch169-debug'; Flash = 'uf2' }
@@ -90,7 +90,7 @@
                 }
         }
 
-        DefaultTarget = 'light_ui_demo_touch169'
+        DefaultTarget = 'screentest_ws_touch169'
 
         #   build-host is the HOST_OS tree, and the only configuration that registers this
         # project's tests -- it is also what both mutants.ps1 harnesses default to. It now has a

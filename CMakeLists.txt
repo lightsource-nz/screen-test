@@ -77,21 +77,19 @@ add_subdirectory(${LIGHT_PATH}/ light_framework)
 light_resolve_project(LIGHT_DISPLAY light_display MARKER module/light_display/CMakeLists.txt)
 add_subdirectory(${LIGHT_DISPLAY_PATH} light_display_group)
 
-add_subdirectory(module/light_touch)
-add_subdirectory(module/light_touch_cst816t)
-
-#   still one repository each, and still submodules under module/, which is what
-# light_resolve_project() finds first. The sibling fallback is what lets any one of them be
-# developed against a working copy outside the submodule without editing this file; set
-# <NAME>_PATH to point somewhere else entirely.
-foreach(_ext_module light_audio light_button light_canvas light_imu light_imu_qmi8658 light_ui)
-        string(TOUPPER ${_ext_module} _ext_var)
-        light_resolve_project(${_ext_var} ${_ext_module})
-        add_subdirectory(${${_ext_var}_PATH} ${_ext_module})
-endforeach()
+#   the UI group -- the widget toolkit, the input and sensor drivers, canvas, audio, and the
+# board-wiring modules this project's own apps link (screentest_hw_po13/_ws_touch169 live there
+# now, beside the demos that share them). These were eight separate repositories and eight
+# submodule pointers here, kept in step by hand, exactly as the display modules once were; the
+# same consolidation applies, and for the same reasons -- see the display group above.
+#
+#   MARKER for the same collision the display group has: the group and its widget-toolkit
+# module share the name light_ui, and module/light_ui is exactly what a checkout of the MODULE
+# would be called (this repository had one until the consolidation).
+light_resolve_project(LIGHT_UI light_ui MARKER module/light_ui/CMakeLists.txt)
+add_subdirectory(${LIGHT_UI_PATH} light_ui_group)
 
 add_subdirectory(module/screentest_common)
-add_subdirectory(module/light_ui_demo_common)
 
 # the WeAct MiniSTM32H7xx and its on-board ST7735S panel. The ST7735 driver itself is no longer
 # named here -- it comes with the display group, like every other panel driver
@@ -115,10 +113,11 @@ if(LIGHT_SYSTEM STREQUAL PICO_SDK)
         # that looks tidy: it would drop working builds for every host but one.
         #
         #   the test to apply is which piece of hardware is fixed. An expansion board fixes the
-        # peripheral and leaves the host free; an integrated board fixes both
-        add_subdirectory(module/screentest_hw_po13)
+        # peripheral and leaves the host free; an integrated board fixes both.
+        #
+        #   the hw wiring modules come from the light_ui group now (they moved with the demos
+        # that share them), so only this project's own applications are added here
         add_subdirectory(module/screentest_po13)
-        add_subdirectory(module/light_ui_demo_po13)
         add_subdirectory(module/screentest_sh1106_spi4)
         add_subdirectory(module/screentest_sh1106_i2c)
 
@@ -144,9 +143,7 @@ if(LIGHT_SYSTEM STREQUAL PICO_SDK)
         # binary that cannot run. Leaving them out on the grounds that they happen to link would
         # be preserving builds whose only property is that nobody has tried them yet
         if(PICO_BOARD STREQUAL waveshare_rp2350_touch_lcd_1.69)
-                add_subdirectory(module/screentest_hw_ws_touch169)
                 add_subdirectory(module/screentest_ws_touch169)
-                add_subdirectory(module/light_ui_demo_touch169)
                 # measures the touch panel's visible corner radius, which the glass hides part of
                 # -- see its app.c. a bring-up tool rather than a demo, kept because the constant
                 # it produces (ST_DISPLAY_CORNER_RADIUS) is otherwise a guess, and a wrong guess

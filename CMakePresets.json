@@ -54,8 +54,7 @@
             ],
             "binaryDir": "${sourceDir}/build-waveshare-touch169",
             "cacheVariables": {
-                "PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS": "-1",
-                "LIGHT_BOOT_COMMAND": "light_ui_demo backlight 600"
+                "PICO_STDIO_USB_CONNECT_WAIT_TIMEOUT_MS": "-1"
             }
         },
         {
@@ -142,34 +141,14 @@
             "targets": ["screentest_po13"]
         },
         {
-            "name": "build-light_ui_demo_po13-debug",
-            "configurePreset": "conf-screentest-debug",
-            "targets": ["light_ui_demo_po13"]
-        },
-        {
-            "name": "build-light_ui_demo_po13-pico2-debug",
-            "configurePreset": "conf-screentest-pico2-debug",
-            "targets": ["light_ui_demo_po13"]
-        },
-        {
             "name": "build-screentest-waveshare-touch169-debug",
             "configurePreset": "conf-screentest-waveshare-touch169-debug",
             "targets": ["screentest_ws_touch169"]
         },
         {
-            "name": "build-light_ui_demo_touch169-debug",
-            "configurePreset": "conf-screentest-waveshare-touch169-debug",
-            "targets": ["light_ui_demo_touch169"]
-        },
-        {
             "name": "build-screentest-waveshare-touch169-riscv-debug",
             "configurePreset": "conf-screentest-waveshare-touch169-riscv-debug",
             "targets": ["screentest_ws_touch169"]
-        },
-        {
-            "name": "build-light_ui_demo_touch169-riscv-debug",
-            "configurePreset": "conf-screentest-waveshare-touch169-riscv-debug",
-            "targets": ["light_ui_demo_touch169"]
         },
         {
             "name": "build-screentest-mini-stm32h7-debug",
