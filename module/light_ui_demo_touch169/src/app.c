@@ -37,10 +37,6 @@ static struct touch_device *_touch_main;
 // this app's own, not shared through light_ui_demo.h: the shared demo body never touches
 // the IMU, only this board's orientation wiring does
 static struct imu_device *_imu_main;
-// down-edge detector. light_touch reports gestures on release, but a button press should
-// land the moment the finger arrives, so this watches the touch state directly rather than
-// going through light_touch_take_gesture()
-static bool _touch_was_active;
 
 void main(int argc, char **argv)
 {
@@ -125,23 +121,31 @@ void __light_ui_demo_input_poll(void)
         if(!_touch_main)
                 return;
 
-        // light_touch's own periodic task keeps touch_active/x/y current, so this reads the
+        //   light_touch's own periodic task keeps touch_active/x/y current, so this reads the
         // state it maintains rather than polling the controller a second time -- the
         // CST816T only answers for a short window after asserting its interrupt line, so a
         // redundant poll would mostly just return nothing anyway.
         //
-        // the panel's own coordinates go straight through: light_ui_input_press_at() takes
+        //   the panel's own coordinates go straight through: light_ui_input_touch() takes
         // them in the display's physical frame and untransforms them itself, which is what
-        // keeps taps landing on the right widget once the UI has been rotated
-        bool active = _touch_main->touch_active;
-        if(active && !_touch_was_active) {
-                // activity is noted for ANY touch, not only one that lands on a widget:
-                // tapping a blank part of a dimmed screen is still someone asking for it,
-                // and having to hit a button to wake the panel would be perverse
+        // keeps touches landing on the right widget once the UI has been rotated.
+        //
+        //   the tracker runs the whole tap-versus-drag interaction: a tap activates on
+        // release (the old down-edge press had to go -- with scrollable content it fired on
+        // every drag's first contact), and a drag over a scrollable window scrolls it to
+        // follow the finger. this app's part is one rule: a drag that scrolled has SPENT the
+        // finger's movement, so the touch is claimed before its release can classify as a
+        // swipe and navigate as well
+        uint8_t touch_state = light_ui_input_touch(_ui,
+                        _touch_main->x, _touch_main->y, _touch_main->touch_active);
+        if(touch_state != UI_TOUCH_NONE) {
+                // any touch involvement is activity -- tapping a blank part of a dimmed
+                // screen is still someone asking for it, and a long drag keeps the panel
+                // awake for as long as the finger is down
                 light_ui_demo_note_activity();
-                light_ui_input_press_at(_ui, _touch_main->x, _touch_main->y);
         }
-        _touch_was_active = active;
+        if(touch_state == UI_TOUCH_DRAG)
+                light_touch_suppress_gesture(_touch_main);
 
         //   swipe right returns to the previous page. light_ui knows nothing about gestures --
         // the mapping from this board's touch controller onto navigation is an application
