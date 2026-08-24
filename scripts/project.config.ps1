@@ -39,6 +39,9 @@
                 #   the light_ui_demo_* apps are gone from this file entirely: they live in the
                 # light_ui group now, built and flashed from that project's own scripts
                 'screentest_po13'          = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
+                #   the 1.5inch RGB OLED Module hangs off the spare SPI0 pins of that same
+                # Pico 2, so it shares the rig, the preset and the SWD flashing path
+                'screentest_ws15rgb'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
                 'screentest_ws_touch169'   = @{ Preset = 'conf-screentest-waveshare-touch169-debug'; Flash = 'uf2' }
                 # no build preset exists for this one; it is a bring-up tool for measuring the
                 # panel's corner radius

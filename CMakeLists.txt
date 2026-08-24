@@ -120,6 +120,11 @@ if(LIGHT_SYSTEM STREQUAL PICO_SDK)
         add_subdirectory(module/screentest_po13)
         add_subdirectory(module/screentest_sh1106_spi4)
         add_subdirectory(module/screentest_sh1106_i2c)
+        #   the Waveshare 1.5inch RGB OLED Module, unguarded for the same reason as the three
+        # above: it is a flying-lead module rather than an integrated board, so the peripheral
+        # is what is fixed and the host is free. Its wiring module comes from the light_ui
+        # group, like every other rig here
+        add_subdirectory(module/screentest_ws15rgb)
 
         #   the Waveshare RP2350-Touch-LCD-1.69 modules. Everything specific to that hardware is
         # RP2350-only and always will be: there is one revision of the board, so there is exactly
