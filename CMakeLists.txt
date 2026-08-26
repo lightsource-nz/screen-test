@@ -91,6 +91,14 @@ add_subdirectory(${LIGHT_UI_PATH} light_ui_group)
 
 add_subdirectory(module/screentest_common)
 
+#   the power-delivery library, incubating HERE rather than in a group repo: it is being
+# developed against one real chip on the bench, and its abstraction has not stopped moving.
+# Extract to its own repo -- it is not UI, input or a sensor, so the light_ui group is the
+# wrong home -- once the shape has settled. Unguarded past any board, like every other
+# portable library: it reaches hardware only through light_ioport, which has host stubs
+add_subdirectory(module/light_power)
+add_subdirectory(module/light_power_husb238)
+
 # the WeAct MiniSTM32H7xx and its on-board ST7735S panel. The ST7735 driver itself is no longer
 # named here -- it comes with the display group, like every other panel driver
 if(LIGHT_SYSTEM STREQUAL CMSIS AND LIGHT_BOARD STREQUAL mini_stm32h7)

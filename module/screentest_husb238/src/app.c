@@ -2,7 +2,10 @@
 #include <light_cli.h>
 #include <light_ioport.h>
 #include <light_platform.h>
+#include <light_power_husb238.h>
 #include <module/mod_light_cli.h>
+#include <module/mod_light_power.h>
+#include <module/mod_light_power_husb238.h>
 
 #include <stdint.h>
 #include <string.h>
@@ -71,11 +74,29 @@ static uint8_t _scan_count;
 static uint8_t _reg_val[HUSB238_REG_LAST + 1];
 static uint8_t _reg_ok[HUSB238_REG_LAST + 1];
 
+//   the same facts as seen through light_power, kept beside the raw ones ON PURPOSE. The raw
+// sweep reads registers; the driver interprets them, and a driver whose interpretation has
+// quietly drifted from the bytes is exactly the bug this rig exists to catch. Having both in
+// memory at once means one gdb read compares them.
+//   readable the same way as everything else here:
+//     -Ex 'print _pd_profiles','print _pd_active_mv','print _pd_is_pd'
+static struct power_device *_pd;
+static struct power_profile _pd_profiles[LIGHT_POWER_MAX_PROFILES];
+static uint8_t _pd_profile_count;
+static uint8_t _pd_contract;            // 1 when a contract is in force, 0 when not
+static uint16_t _pd_active_mv;
+static uint16_t _pd_active_ma;
+static uint8_t _pd_is_pd;               // the driver's pd_compliant flag, as light_power reports it
+static uint8_t _pd_best_for_12v;        // light_power_find_profile(dev, 12000), a spot-check of the helper
+static uint16_t _pd_max_mv;             // the request ceiling actually in force on this device
+
 static void _husb238_event(const struct light_module *module, uint8_t event, void *arg);
 static uint8_t _husb238_main(struct light_application *app);
 
 Light_Application_Define(screentest_husb238, _husb238_event, _husb238_main,
                                 &light_cli,
+                                &light_power,
+                                &light_power_husb238,
                                 &light_core);
 
 void main(int argc, char **argv)
@@ -318,6 +339,26 @@ static void _husb238_event(const struct light_module *module, uint8_t event, voi
                 _io = light_ioport_setup_io_i2c(
                                 HUSB238_PORT_ID, LIGHT_IOPORT_PIN_NONE, HUSB238_I2C_ADDR,
                                 HUSB238_PIN_SCL, HUSB238_PIN_SDA);
+                //   its OWN io_context, not _io: the raw sweep retargets _io's address field
+                // while scanning, and a driver sharing that context would find itself pointed
+                // at whatever the sweep was probing. Two contexts on one peripheral is the
+                // normal arrangement anyway -- an io_context carries an address, not a bus
+                _pd = light_power_husb238_create_device("husb238_main",
+                                light_ioport_setup_io_i2c(
+                                        HUSB238_PORT_ID, LIGHT_IOPORT_PIN_NONE,
+                                        HUSB238_I2C_ADDR, HUSB238_PIN_SCL, HUSB238_PIN_SDA));
+                //   THE WIRING FACT THAT MATTERS ON THIS BENCH: the sink's output is
+                // hardwired to the Pico's 5V input. There is no regulator between them and no
+                // margin -- a successful request for 9V puts 9V on a 5V rail and the Pico is
+                // gone, along with the debug probe's view of it.
+                //   set explicitly rather than left to the default, even though the default is
+                // already this value. The number is not a preference, it is a description of
+                // how these two boards are joined, and it belongs where a reader learns that
+                // -- next to the device being created. Should this rail ever feed something
+                // that can take more, THIS is the line to change, and changing it is a claim
+                // about solder rather than about software
+                if(_pd)
+                        light_power_set_max_millivolts(_pd, 5000);
                 light_info("husb238 probe ready on i2c port %d (scl=%d, sda=%d), address 0x%02x",
                                 HUSB238_PORT_ID, HUSB238_PIN_SCL, HUSB238_PIN_SDA,
                                 HUSB238_I2C_ADDR);
@@ -329,6 +370,50 @@ static void _husb238_event(const struct light_module *module, uint8_t event, voi
         case LF_EVENT_MODULE_UNLOAD:
                 break;
         }
+}
+
+//   the light_power view of the same chip, captured beside the raw registers so the two can
+// be compared in one place. Forces a read rather than waiting for the module task's next
+// throttled poll, so the snapshot matches the register dump taken moments earlier rather than
+// something up to half a second older
+static void _capture_power_view(void)
+{
+        if(!_pd) {
+                light_warn("no light_power device -- driver did not come up");
+                return;
+        }
+        //   the interval is cleared for this one call and restored after: with a 500ms
+        // throttle the poll below would very likely be skipped outright, and a snapshot that
+        // silently reports whatever was last read is worse than no snapshot
+        uint16_t saved = _pd->poll_interval_ms;
+        light_power_set_poll_interval(_pd, 0);
+        bool read = light_power_command_poll(_pd);
+        light_power_set_poll_interval(_pd, saved);
+
+        _pd_is_pd = light_power_is_pd(_pd) ? 1 : 0;
+        _pd_profile_count = light_power_profile_count(_pd);
+        for(uint8_t i = 0; i < LIGHT_POWER_MAX_PROFILES; i++)
+                light_power_get_profile(_pd, i, &_pd_profiles[i]);
+        _pd_contract = light_power_get_active(_pd, &_pd_active_mv, &_pd_active_ma) ? 1 : 0;
+        //   asked for 12000mV deliberately, against a device capped at 5000mV: the answer
+        // proves the ceiling binds the FINDER as well as the selector. If this ever comes back
+        // naming the 12V profile, find-then-select has become a trap that hands out an index
+        // the next call refuses
+        _pd_best_for_12v = light_power_find_profile(_pd, 12000);
+        _pd_max_mv = light_power_get_max_millivolts(_pd);
+
+        light_info("light_power: %s device, %d profiles, poll %s",
+                        _pd_is_pd ? "PD-compliant" : "non-PD",
+                        _pd_profile_count, read ? "ok" : "FAILED");
+        for(uint8_t i = 0; i < _pd_profile_count; i++)
+                light_info("  [%d] %5dmV %5dmA %s", i,
+                                _pd_profiles[i].millivolts, _pd_profiles[i].milliamps,
+                                _pd_profiles[i].available ? "offered" : "--");
+        if(_pd_contract)
+                light_info("  contract: %dmV %dmA", _pd_active_mv, _pd_active_ma);
+        else
+                light_info("  contract: none negotiated (rail is at the bus default)");
+        light_info("  best profile at or below 12000mV: %d", _pd_best_for_12v);
 }
 
 //   the sweep runs ONCE, automatically, and that is what makes this rig usable on a board
@@ -349,6 +434,7 @@ static void _service_autosweep(uint32_t now)
                 return;
         _dump_registers();
         _read_status();
+        _capture_power_view();
         light_info("--- sweep complete ---");
 }
 

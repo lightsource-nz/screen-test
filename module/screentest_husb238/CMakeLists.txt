@@ -12,6 +12,8 @@ target_sources(
 target_link_libraries(
         screentest_husb238 PUBLIC
         light_ioport
+        light_power
+        light_power_husb238
         light_cli
         light_core
 )
