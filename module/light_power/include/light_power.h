@@ -33,6 +33,24 @@
 // decision made through light_power_set_max_millivolts() by whoever knows the wiring
 #define LIGHT_POWER_SAFE_MAX_MV                 5000
 
+//   what became of the last request. A selection is not a function call that succeeds or
+// fails -- it is a message handed to a negotiation that answers later, or does not answer at
+// all -- so the outcome is a STATE the poll path resolves rather than a return value.
+//
+//   the case that forced this: a HUSB238 was asked for 15V and for 20V, both advertised by the
+// source. Both writes landed, both returned success, and the source granted neither -- the
+// contract simply stayed where it was. A refused request is indistinguishable from a
+// successful one at the moment of asking, because nothing has happened yet either way
+#define LIGHT_POWER_REQUEST_NONE                0
+#define LIGHT_POWER_REQUEST_PENDING             1
+#define LIGHT_POWER_REQUEST_ACTIVE              2
+#define LIGHT_POWER_REQUEST_REFUSED             3
+//   how long a request may stay PENDING before it is called refused. USB PD negotiation
+// completes in well under a second -- 12V was measured landing inside 800ms on this bench --
+// and a request still unanswered at this point was measured still unanswered at 2s, so waiting
+// longer only delays the news
+#define LIGHT_POWER_REQUEST_TIMEOUT_MS          1500
+
 //   one selectable operating point: a voltage the source can be asked to supply, and the
 // most current it will provide there.
 //
@@ -118,6 +136,11 @@ struct power_device {
         // consumer can tell "asked for 12V and got it" from "asked for 12V and is still at
         // 5V", which are indistinguishable from active_mv alone
         uint8_t requested;
+        //   and what became of it -- one of LIGHT_POWER_REQUEST_*, resolved by the poll path
+        // rather than by the call that made the request. request_started_ms is when the asking
+        // happened, which is what lets an unanswered request eventually be called refused
+        uint8_t request_state;
+        uint32_t request_started_ms;
 
         //   the highest voltage this device may be ASKED for -- a property of what is wired
         // downstream, not of what the source offers, which is why it lives on the device and
@@ -207,10 +230,22 @@ extern bool light_power_is_pd(struct power_device *dev);
 // unlike everything above: every other call here observes, and this one acts on hardware that
 // may be powering the caller. Whatever is downstream of that rail must be able to survive the
 // new voltage -- this layer cannot know what is, and does not guess.
-//   refuses an out-of-range index, a profile the source does not currently offer, and a
-// driver with no selection support, so the failure modes that ARE knowable here are caught
-// before anything reaches the wire. Returns what the driver returned: the request was sent,
-// not that it took effect -- confirm with a later light_power_command_poll()
+//   refuses an out-of-range index, a profile the source does not currently offer, a voltage
+// above this device's ceiling, and a driver with no selection support -- so the failure modes
+// that ARE knowable here are caught before anything reaches the wire.
+//
+//   RETURNS ONLY THAT THE REQUEST WAS SENT. It cannot mean more than that: the source answers
+// on its own schedule, and at the moment of asking a request that will be granted and one that
+// will be refused look identical. Measured, not theorised -- a HUSB238 was asked for 15V and
+// 20V, both advertised by the source, and both writes landed and returned true while the
+// source granted neither.
+//   so the OUTCOME arrives through light_power_request_state(), which the poll path resolves
+// to ACTIVE or REFUSED. A caller that needs to know it got what it asked for waits for that;
+// one that treats this bool as the answer will believe it is running at 20V while sitting at 12
 extern bool light_power_select_profile(struct power_device *dev, uint8_t index);
+//   one of LIGHT_POWER_REQUEST_*. Resolved by light_power_command_poll(), so a caller that
+// never polls sees PENDING forever -- which is honest, since without asking the hardware there
+// genuinely is no news
+extern uint8_t light_power_request_state(struct power_device *dev);
 
 #endif

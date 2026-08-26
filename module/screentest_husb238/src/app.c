@@ -1,4 +1,8 @@
 #include <light.h>
+#if(LIGHT_SYSTEM == SYSTEM_PICO_SDK)
+// for gpio_get() -- see _check_bus_idle(), which reads the I2C pads directly
+#include <hardware/gpio.h>
+#endif
 #include <light_cli.h>
 #include <light_ioport.h>
 #include <light_platform.h>
@@ -90,6 +94,62 @@ static uint8_t _pd_is_pd;               // the driver's pd_compliant flag, as li
 static uint8_t _pd_best_for_12v;        // light_power_find_profile(dev, 12000), a spot-check of the helper
 static uint16_t _pd_max_mv;             // the request ceiling actually in force on this device
 
+// the idle level of each bus line, sampled before anything transacts -- see _check_bus_idle()
+static uint8_t _bus_scl_high;
+static uint8_t _bus_sda_high;
+
+//   results of the selection-mechanism half-test below. Kept separate from the sweep's
+// globals because this one does not run unless someone asks for it
+static uint8_t _sel_test_ran;
+static uint8_t _sel_before;             // SRC_PDO_SEL as found
+static uint8_t _sel_after;              // ...after writing the 5V code
+static uint8_t _sel_restored;           // ...after putting it back
+static uint8_t _sel_status0_before;     // PD_STATUS0 either side of the write: these MUST match,
+static uint8_t _sel_status0_after;      // because nothing should have been negotiated
+
+//   THE NEGOTIATION TEST, and the one switch that decides whether this rig moves a real rail.
+//
+//   Set only while the sink's output is DISCONNECTED from anything that could be harmed. On
+// this bench that is now true -- the output was removed from the Pico's 5V input and the Pico
+// runs off the debug probe -- which is what makes a full sweep of the source's voltages safe
+// and therefore worth doing. Clear it again the moment that output is wired to anything.
+//   compile-time rather than a runtime flag on purpose: a build that must not negotiate should
+// not CONTAIN the code that does, so nothing left set in RAM, and no debugger poking at a
+// variable, can start one
+#define HUSB238_ALLOW_NEGOTIATION_TEST          1
+
+//   how long to let a contract settle before believing what the chip says about it. PD
+// negotiation is asynchronous -- the request is handed to a conversation with the source that
+// completes in its own time -- so reading PD_STATUS0 immediately after asking reports the OLD
+// contract and looks exactly like a refusal
+//   2s rather than 800ms. At 800ms the 5/9/12V requests all landed and 15V and 20V did not,
+// which is exactly the shape a too-short wait produces at the top of the range -- a bigger
+// voltage step is a longer transition. Generous enough that a failure at this length is a
+// refusal rather than a stopwatch artefact
+#define NEG_SETTLE_MS                           2000
+
+// one row per profile: what was asked for, and what actually turned up
+static uint8_t _neg_sent[LIGHT_POWER_MAX_PROFILES];
+static uint16_t _neg_result_mv[LIGHT_POWER_MAX_PROFILES];
+static uint16_t _neg_result_ma[LIGHT_POWER_MAX_PROFILES];
+static uint8_t _neg_result_contract[LIGHT_POWER_MAX_PROFILES];
+//   the chip's own registers after each attempt, which is what separates the two ways this
+// can fail. SRC_PDO_SEL holding our value while PD_STATUS0 stays put means the selection
+// landed and GO_COMMAND did not trigger anything -- the request encoding is wrong. SRC_PDO_SEL
+// reading back zero means the write never stuck at all, whatever the ACK said
+static uint8_t _neg_sel_after[LIGHT_POWER_MAX_PROFILES];
+static uint8_t _neg_status0_after[LIGHT_POWER_MAX_PROFILES];
+static uint8_t _neg_status1_after[LIGHT_POWER_MAX_PROFILES];
+//   what light_power decided the request came to, per stage. The point of recording it beside
+// the raw registers is that it is a CLAIM about them: 5/9/12V should read ACTIVE(2) and 15/20V
+// REFUSED(3), and any disagreement between this column and PD_STATUS0 is the abstraction
+// getting it wrong rather than the hardware
+static uint8_t _neg_state[LIGHT_POWER_MAX_PROFILES];
+static uint8_t _neg_stage;
+static uint8_t _neg_phase;
+static uint32_t _neg_started_ms;
+static uint8_t _neg_done;
+
 static void _husb238_event(const struct light_module *module, uint8_t event, void *arg);
 static uint8_t _husb238_main(struct light_application *app);
 
@@ -142,6 +202,40 @@ static struct light_cli_invocation_result do_cmd_husb238(struct light_cli_invoca
 //   sweeps the legal address range and reports whatever answers. ALWAYS the first thing to run:
 // it separates "the wiring is good and the chip is alive" from every other question, and it
 // does so without assuming anything about what the chip is
+//   the state of the two bus lines with nothing driving them, read straight off the pads.
+// GPIO_IN reflects the pad regardless of which peripheral owns the pin, so this works without
+// disturbing the I2C function -- and it turns "the chip is not answering" from a guess about
+// wiring into a measurement that says WHICH guess.
+//
+//   both HIGH is a healthy idle bus: the pull-ups are doing their job and the wires reach the
+// Pico, so a silent chip is unpowered, absent, or at another address.
+//   either LOW with nothing transacting means the level never gets released -- a missing
+// pull-up, a line shorted to ground, or a device clamping it.
+//   the asymmetry is the useful part: SDA low alone is the classic stuck-slave, SCL low alone
+// points at the wire or the pull-up, and both low says the pull-ups are not there at all
+static void _check_bus_idle(void)
+{
+#if(LIGHT_SYSTEM == SYSTEM_PICO_SDK)
+        _bus_scl_high = gpio_get(HUSB238_PIN_SCL) ? 1 : 0;
+        _bus_sda_high = gpio_get(HUSB238_PIN_SDA) ? 1 : 0;
+#endif
+        light_info("bus idle levels: SCL(gp%d)=%s SDA(gp%d)=%s",
+                        HUSB238_PIN_SCL, _bus_scl_high ? "HIGH" : "LOW",
+                        HUSB238_PIN_SDA, _bus_sda_high ? "HIGH" : "LOW");
+        if(_bus_scl_high && _bus_sda_high) {
+                light_info("  bus is idle and pulled up -- wiring and pull-ups are good, so a"
+                                " silent chip is unpowered or absent");
+                return;
+        }
+        if(!_bus_scl_high && !_bus_sda_high)
+                light_warn("  BOTH low: pull-ups are not reaching these pins, or both lines are"
+                                " shorted to ground");
+        else if(!_bus_sda_high)
+                light_warn("  SDA held low: a device is clamping it, or SDA is shorted");
+        else
+                light_warn("  SCL held low: check that wire and its pull-up");
+}
+
 static bool _sweep_addresses(void)
 {
         uint8_t found = 0;
@@ -372,6 +466,78 @@ static void _husb238_event(const struct light_module *module, uint8_t event, voi
         }
 }
 
+//   HALF a test of the selection mechanism, and the safe half.
+//
+//   what it exercises: that a register WRITE reaches this chip at all, that SRC_PDO_SEL is
+// where we think it is, and that the value our code builds for "profile 0" lands as written.
+// That is the part most likely to be wrong in software, and none of it moves a rail.
+//
+//   what it deliberately does NOT do: write GO_COMMAND. SRC_PDO_SEL only HOLDS a selection --
+// the request happens when GO_COMMAND is written, and nothing before that point renegotiates
+// anything. So this cannot change the output voltage even if every assumption below is wrong.
+//
+//   why that matters here: the code this writes, 1 in the high nibble, is believed to mean 5V
+// because PD_STATUS0 uses that numbering -- confirmed, since the chip reported 0x13 while the
+// rail was measurably at 5V. That SRC_PDO_SEL shares the numbering is an inference by ANALOGY
+// from third-party sources and is not confirmed. If it is off by one, "requesting 5V" requests
+// 9V, and on this bench 9V reaches a Pico's 5V input. That is why the request half of the
+// mechanism waits for a rail with nothing precious on it, and why this half is worth having
+// separately: it removes every software doubt that can be removed without taking that risk.
+//
+//   NOT called from the sweep, and not called from anywhere. Invoke it deliberately:
+//     scripts/debug.ps1 -Target screentest_husb238 -Batch -NoBuild -Attach \
+//         -Ex 'call _test_pdo_sel_writeback()','print _sel_after','print _sel_status0_after'
+//   non-static so it survives as a callable symbol
+void _test_pdo_sel_writeback(void)
+{
+        //   the 5V code as light_power_husb238 would build it for profile 0, written out here
+        // rather than reusing the driver's macro: this test is checking that construction, and
+        // a test that borrows the thing it is checking proves nothing
+        const uint8_t five_volt_sel = 1 << HUSB238_PDO_SEL_SHIFT;
+
+        _sel_test_ran = 0;
+        if(!_read_reg(HUSB238_REG_SRC_PDO_SEL, &_sel_before)
+                        || !_read_reg(HUSB238_REG_PD_STATUS0, &_sel_status0_before)) {
+                light_warn("sel test: chip not answering; nothing attempted");
+                return;
+        }
+        light_info("sel test: SRC_PDO_SEL=%02x PD_STATUS0=%02x before",
+                        _sel_before, _sel_status0_before);
+
+        if(!light_ioport_write_register_byte(_io, HUSB238_REG_SRC_PDO_SEL, five_volt_sel)) {
+                light_warn("sel test: write to SRC_PDO_SEL failed -- nothing changed");
+                return;
+        }
+        (void)_read_reg(HUSB238_REG_SRC_PDO_SEL, &_sel_after);
+        (void)_read_reg(HUSB238_REG_PD_STATUS0, &_sel_status0_after);
+        light_info("sel test: wrote %02x, reads back %02x, PD_STATUS0=%02x",
+                        five_volt_sel, _sel_after, _sel_status0_after);
+
+        //   restored unconditionally, including after a surprising read-back: leaving a
+        // selection staged is how a LATER GO_COMMAND -- from any source, including a
+        // half-finished experiment -- would act on a choice nobody remembers making
+        if(!light_ioport_write_register_byte(_io, HUSB238_REG_SRC_PDO_SEL, _sel_before))
+                light_warn("sel test: could NOT restore SRC_PDO_SEL to %02x -- a selection is"
+                                " left staged; do not write GO_COMMAND", _sel_before);
+        (void)_read_reg(HUSB238_REG_SRC_PDO_SEL, &_sel_restored);
+
+        //   the actual verdict. PD_STATUS0 changing would mean the write renegotiated
+        // something on its own, which would falsify the premise this whole test rests on
+        if(_sel_status0_after != _sel_status0_before)
+                light_warn("sel test: PD_STATUS0 MOVED %02x -> %02x. Writing SRC_PDO_SEL is not"
+                                " inert on this part -- stop and re-think before any GO_COMMAND",
+                                _sel_status0_before, _sel_status0_after);
+        else if(_sel_after != five_volt_sel)
+                light_warn("sel test: wrote %02x but read back %02x -- the register does not"
+                                " hold what we put in it", five_volt_sel, _sel_after);
+        else
+                light_info("sel test: write path good, rail untouched, restored to %02x",
+                                _sel_restored);
+        _sel_test_ran = 1;
+}
+
+static bool _poll_now(void);
+
 //   the light_power view of the same chip, captured beside the raw registers so the two can
 // be compared in one place. Forces a read rather than waiting for the module task's next
 // throttled poll, so the snapshot matches the register dump taken moments earlier rather than
@@ -382,13 +548,7 @@ static void _capture_power_view(void)
                 light_warn("no light_power device -- driver did not come up");
                 return;
         }
-        //   the interval is cleared for this one call and restored after: with a 500ms
-        // throttle the poll below would very likely be skipped outright, and a snapshot that
-        // silently reports whatever was last read is worse than no snapshot
-        uint16_t saved = _pd->poll_interval_ms;
-        light_power_set_poll_interval(_pd, 0);
-        bool read = light_power_command_poll(_pd);
-        light_power_set_poll_interval(_pd, saved);
+        bool read = _poll_now();
 
         _pd_is_pd = light_power_is_pd(_pd) ? 1 : 0;
         _pd_profile_count = light_power_profile_count(_pd);
@@ -430,6 +590,9 @@ static void _service_autosweep(uint32_t now)
         _swept = true;
 
         light_info("--- automatic sweep ---");
+        //   before anything transacts, so it measures the bus at rest rather than whatever a
+        // failed transfer left behind
+        _check_bus_idle();
         if(!_sweep_addresses())
                 return;
         _dump_registers();
@@ -438,9 +601,118 @@ static void _service_autosweep(uint32_t now)
         light_info("--- sweep complete ---");
 }
 
+// forces a read regardless of the module task's throttle -- see _capture_power_view()
+static bool _poll_now(void)
+{
+        uint16_t saved = _pd->poll_interval_ms;
+        light_power_set_poll_interval(_pd, 0);
+        bool read = light_power_command_poll(_pd);
+        light_power_set_poll_interval(_pd, saved);
+        return read;
+}
+
+#if HUSB238_ALLOW_NEGOTIATION_TEST
+//   walks every voltage the source offers, requesting each in turn and recording what actually
+// appears on the rail afterwards. Run as a state machine across ticks rather than as a loop,
+// because each step has to WAIT for a negotiation that completes in its own time, and blocking
+// the scheduler for the better part of a second per profile is exactly the pattern this
+// codebase has been burned by before.
+//
+//   what it is actually for: the driver builds a selection code by adding one to the profile
+// index, on the belief that SRC_PDO_SEL numbers voltages the way PD_STATUS0 does. That belief
+// is an inference by analogy and has never been checked. Asking for every voltage and reading
+// back what arrives checks it directly -- and a table where requested and actual disagree by a
+// consistent step is an off-by-one shown rather than argued about
+static void _service_negotiation(uint32_t now)
+{
+        if(!_swept || _neg_done || !_pd)
+                return;
+
+        switch(_neg_phase) {
+        case 0:
+                //   the ceiling exists to stop exactly what this function does, so raising it
+                // is the deliberate act the API asks for -- and it is logged as a warning by
+                // light_power_set_max_millivolts(), which is correct: someone should be able
+                // to find this in a log later and see who claimed the rail could take it
+                light_info("--- negotiation test: output must be disconnected ---");
+                light_power_set_max_millivolts(_pd, 20000);
+                _neg_stage = 0;
+                _neg_phase = 1;
+                return;
+
+        case 1: {
+                //   skip what the source does not offer. Requesting an unavailable profile is
+                // refused by light_power_select_profile() anyway, but stepping over it here
+                // keeps the results table aligned with the profile list
+                while(_neg_stage < light_power_profile_count(_pd)) {
+                        struct power_profile p;
+                        light_power_get_profile(_pd, _neg_stage, &p);
+                        if(p.available)
+                                break;
+                        _neg_stage++;
+                }
+                if(_neg_stage >= light_power_profile_count(_pd)) {
+                        //   finish at the bottom of the range rather than wherever the sweep
+                        // ended. Leaving 20V standing on a bench rail because the loop
+                        // happened to stop there is how a later "it was only 5V, surely"
+                        // turns into a dead board
+                        light_info("negotiation test: returning the rail to 5V");
+                        light_power_select_profile(_pd, 0);
+                        light_power_set_max_millivolts(_pd, 5000);
+                        _neg_done = 1;
+                        _neg_phase = 0;
+                        return;
+                }
+                _neg_sent[_neg_stage] = light_power_select_profile(_pd, _neg_stage) ? 1 : 0;
+                _neg_started_ms = now;
+                _neg_phase = 2;
+                return;
+        }
+
+        case 2:
+                if(now - _neg_started_ms < NEG_SETTLE_MS)
+                        return;
+                _poll_now();
+                _neg_result_contract[_neg_stage] =
+                        light_power_get_active(_pd, &_neg_result_mv[_neg_stage],
+                                                &_neg_result_ma[_neg_stage]) ? 1 : 0;
+                //   the raw registers alongside the interpreted view, read through the app's
+                // own io_context so the driver's state cannot colour what is reported
+                (void)_read_reg(HUSB238_REG_SRC_PDO_SEL, &_neg_sel_after[_neg_stage]);
+                (void)_read_reg(HUSB238_REG_PD_STATUS0, &_neg_status0_after[_neg_stage]);
+                //   PD_STATUS1 carries a PD_RESPONSE field, which is the source's own verdict
+                // on the request. That is the difference between "we asked and were refused"
+                // and "we never really asked" -- and PD_STATUS0 alone cannot tell them apart,
+                // because a refused request simply leaves the previous contract standing
+                (void)_read_reg(HUSB238_REG_PD_STATUS1, &_neg_status1_after[_neg_stage]);
+                _neg_state[_neg_stage] = light_power_request_state(_pd);
+                light_info("  stage %d: SRC_PDO_SEL=%02x PD_STATUS0=%02x PD_STATUS1=%02x",
+                                _neg_stage, _neg_sel_after[_neg_stage],
+                                _neg_status0_after[_neg_stage], _neg_status1_after[_neg_stage]);
+                {
+                        struct power_profile p;
+                        light_power_get_profile(_pd, _neg_stage, &p);
+                        light_info("  asked %5dmV -> got %5dmV %5dmA %s", p.millivolts,
+                                        _neg_result_mv[_neg_stage], _neg_result_ma[_neg_stage],
+                                        _neg_result_contract[_neg_stage] ? "(contract)" : "(no contract)");
+                        if(_neg_result_contract[_neg_stage]
+                                        && _neg_result_mv[_neg_stage] != p.millivolts)
+                                light_warn("    MISMATCH -- the selection encoding is wrong");
+                }
+                _neg_stage++;
+                _neg_phase = 1;
+                return;
+        }
+}
+#else
+static void _service_negotiation(uint32_t now) { (void)now; }
+#endif
+
 static uint8_t _husb238_main(struct light_application *app)
 {
-        _service_autosweep(light_platform_get_time_since_init());
+        uint32_t now = light_platform_get_time_since_init();
+        _service_autosweep(now);
+        _service_negotiation(now);
         // a no-op unless this build has a USB console; see _poll_console()
         _poll_console();
         return LF_STATUS_RUN;

@@ -102,6 +102,8 @@ struct power_device *light_power_init_device_va(
         dev->active_mv = 0;
         dev->active_ma = 0;
         dev->requested = LIGHT_POWER_PROFILE_NONE;
+        dev->request_state = LIGHT_POWER_REQUEST_NONE;
+        dev->request_started_ms = 0;
         //   the ceiling starts where it is safe rather than where the hardware could go: see
         // LIGHT_POWER_SAFE_MAX_MV. A device that has not been told what it is wired to may ask
         // for nothing beyond what is already on the rail
@@ -122,6 +124,41 @@ void light_power_command_reset(struct power_device *dev)
         light_debug("device: %s", dev->header.id);
         dev->driver_ctx->driver->reset(dev);
 }
+//   decides what became of an outstanding request, using the state the driver has just read.
+// Lives here rather than in each driver because it is the same judgement for every device: did
+// the thing we asked for turn up, and if not, has long enough passed to call it refused
+static void _resolve_request(struct power_device *dev, uint32_t now)
+{
+        //   nothing outstanding. Also the path a disconnect takes: a driver that loses its
+        // source clears `requested`, which retires whatever was in flight along with it --
+        // resolving a request against a source that has gone away would be inventing news
+        if(dev->requested == LIGHT_POWER_PROFILE_NONE) {
+                dev->request_state = LIGHT_POWER_REQUEST_NONE;
+                return;
+        }
+        if(dev->request_state != LIGHT_POWER_REQUEST_PENDING)
+                return;
+
+        //   granted: there is a contract AND it is the one asked for. Both halves matter --
+        // a contract at a DIFFERENT voltage means an earlier request is still standing and
+        // this one was ignored, which is exactly what a refused HUSB238 request looks like
+        if(dev->contract_active && dev->active_mv == dev->profile[dev->requested].millivolts) {
+                dev->request_state = LIGHT_POWER_REQUEST_ACTIVE;
+                light_info("device '%s': profile %d (%dmV) is in force",
+                                dev->header.id, dev->requested, dev->active_mv);
+                return;
+        }
+        if(now - dev->request_started_ms < LIGHT_POWER_REQUEST_TIMEOUT_MS)
+                return;
+
+        //   refused, and said plainly. A source may advertise a profile and decline to supply
+        // it -- measured on a charger offering 15V and 20V that granted neither -- and a
+        // caller told only that the write succeeded would carry on believing it had them
+        dev->request_state = LIGHT_POWER_REQUEST_REFUSED;
+        light_warn("device '%s': profile %d (%dmV) was NOT granted; still at %dmV",
+                        dev->header.id, dev->requested,
+                        dev->profile[dev->requested].millivolts, dev->active_mv);
+}
 bool light_power_command_poll(struct power_device *dev)
 {
         uint32_t now = light_platform_get_time_since_init();
@@ -133,7 +170,12 @@ bool light_power_command_poll(struct power_device *dev)
                 return false;
         dev->last_poll_ms = now;
 
-        return dev->driver_ctx->driver->poll(dev);
+        bool read = dev->driver_ctx->driver->poll(dev);
+        //   resolved even when the read FAILED, so a request outstanding against a device that
+        // has stopped answering still times out into REFUSED rather than staying pending for
+        // ever. A source that cannot be reached has not granted anything
+        _resolve_request(dev, now);
+        return read;
 }
 void light_power_set_poll_interval(struct power_device *dev, uint16_t interval_ms)
 {
@@ -262,7 +304,23 @@ bool light_power_select_profile(struct power_device *dev, uint8_t index)
         // against the active point is asking "did what I asked for happen", which needs the
         // asking recorded even -- especially -- when it did not
         dev->requested = index;
-        return drv->select_profile(dev, index);
+        //   PENDING from the moment of asking, and the clock starts here rather than at the
+        // first poll: the negotiation began when the request went out, so timing it from when
+        // somebody next got round to looking would call a slow answer refused
+        dev->request_state = LIGHT_POWER_REQUEST_PENDING;
+        dev->request_started_ms = light_platform_get_time_since_init();
+
+        if(drv->select_profile(dev, index))
+                return true;
+
+        //   the write itself failed, which is the one refusal knowable immediately: nothing
+        // reached the source, so there is nothing to wait for
+        dev->request_state = LIGHT_POWER_REQUEST_REFUSED;
+        return false;
+}
+uint8_t light_power_request_state(struct power_device *dev)
+{
+        return dev->request_state;
 }
 void light_power_poll_devices(void)
 {

@@ -80,9 +80,15 @@ static bool _read_reg(struct husb238_state *state, uint8_t reg, uint8_t *out)
 {
         return light_ioport_read_register(state->io_ctx, reg, out, 1);
 }
+//   the STRICTLY FRAMED write, not light_ioport_write_register(). This part wants its register
+// address and its payload as one two-byte transaction, and the general path sends them as two
+// transfers separated by a repeated START that re-sends the device address. The chip
+// acknowledges that and stores nothing: measured here, SRC_PDO_SEL took five writes of five
+// different values and read back 0x00 after every one, which is why the negotiation appeared
+// to do nothing while every return code said success
 static bool _write_reg(struct husb238_state *state, uint8_t reg, uint8_t value)
 {
-        return light_ioport_write_register(state->io_ctx, reg, &value, 1);
+        return light_ioport_write_register_byte(state->io_ctx, reg, value);
 }
 
 //   the profile list's SHAPE is fixed by the part, so it is filled in here once rather than
