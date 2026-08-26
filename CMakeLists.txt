@@ -120,6 +120,10 @@ if(LIGHT_SYSTEM STREQUAL PICO_SDK)
         add_subdirectory(module/screentest_po13)
         add_subdirectory(module/screentest_sh1106_spi4)
         add_subdirectory(module/screentest_sh1106_i2c)
+        #   the I2C interrogation rig. Unguarded past PICO_SDK by the same test the block
+        # above applies: what is fixed here is a chip on flying leads, not the host, so it
+        # builds and runs on any Pico-compatible target
+        add_subdirectory(module/screentest_husb238)
         #   the Waveshare 1.5inch RGB OLED Module, unguarded for the same reason as the three
         # above: it is a flying-lead module rather than an integrated board, so the peripheral
         # is what is fixed and the host is free. Its wiring module comes from the light_ui

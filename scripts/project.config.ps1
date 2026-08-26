@@ -39,6 +39,10 @@
                 #   the light_ui_demo_* apps are gone from this file entirely: they live in the
                 # light_ui group now, built and flashed from that project's own scripts
                 'screentest_po13'          = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
+                #   the I2C interrogation rig, on a Pico 2 reached through a Raspberry Pi Debug
+                # Probe exactly as the po13 rig is -- so 'swd', and images arrive via
+                # scripts/debug.ps1 -Batch rather than BOOTSEL
+                'screentest_husb238'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
                 #   the 1.5inch RGB OLED Module hangs off the spare SPI0 pins of that same
                 # Pico 2, so it shares the rig, the preset and the SWD flashing path
                 'screentest_ws15rgb'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
