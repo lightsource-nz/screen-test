@@ -43,6 +43,8 @@
                 # Probe exactly as the po13 rig is -- so 'swd', and images arrive via
                 # scripts/debug.ps1 -Batch rather than BOOTSEL
                 'screentest_husb238'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
+                #   the SSD1322 OLED rig, on the same SWD-docked Pico 2 as the husb238 probe
+                'screentest_ssd1322'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
                 #   the 1.5inch RGB OLED Module hangs off the spare SPI0 pins of that same
                 # Pico 2, so it shares the rig, the preset and the SWD flashing path
                 'screentest_ws15rgb'       = @{ Preset = 'conf-screentest-pico2-debug'; Flash = 'swd' }
