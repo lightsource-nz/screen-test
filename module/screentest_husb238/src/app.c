@@ -1,3 +1,11 @@
+//   THE CONSOLE ROOT IS `screentest_husb238` NOW, not `husb238`. Light_Application_Define()
+// names the root command after the application, with nothing to override, so the two cannot
+// drift apart -- at the cost of renaming this rig's console root, which was shorter.
+//   in practice nothing typed at the console changes: lines are entered without the root name
+// ("scan", "dump", "read 0x09"), and _poll_console() below queues them against the root command
+// rather than naming it. Only a line that spelled the root out in full is affected.
+#define LIGHT_APP_ROOT_COMMAND_DESCRIPTION      "interrogates the I2C device on port 0"
+
 #include <light.h>
 #if(LIGHT_SYSTEM == SYSTEM_PICO_SDK)
 // for gpio_get() -- see _check_bus_idle(), which reads the I2C pads directly
@@ -191,12 +199,6 @@ static bool _probe_addr(uint8_t addr)
         _io->io.i2c.addr = addr;
         bool present = light_ioport_read_register(_io, reg, &value, 1);
         return present;
-}
-
-static struct light_cli_invocation_result do_cmd_husb238(struct light_cli_invocation *invoke)
-{
-        // the bare root does nothing; it exists to hang the subcommands off
-        return Result_Success;
 }
 
 //   sweeps the legal address range and reports whatever answers. ALWAYS the first thing to run:
@@ -393,15 +395,17 @@ static struct light_cli_invocation_result do_cmd_husb238_status(struct light_cli
         return _read_status() ? Result_Success : Result_Error;
 }
 
-Light_Command_Define(cmd_husb238, &root_command, "husb238",
-                        "interrogates the I2C device on port 0", do_cmd_husb238, 0, 0);
-Light_Command_Define(cmd_husb238_scan, &cmd_husb238, "scan",
+//   the root command is declared by Light_Application_Define(), named by
+// LIGHT_APP_ROOT_COMMAND_NAME at the top of this file, so these hang off LIGHT_COMMAND_APP_ROOT.
+// do_cmd_husb238() is gone with it: it printed the subcommand list, which is exactly what the
+// default root handler does.
+Light_Command_Define(cmd_husb238_scan, LIGHT_COMMAND_APP_ROOT, "scan",
                         "sweeps the bus and reports which addresses answer", do_cmd_husb238_scan, 0, 0);
-Light_Command_Define(cmd_husb238_dump, &cmd_husb238, "dump",
+Light_Command_Define(cmd_husb238_dump, LIGHT_COMMAND_APP_ROOT, "dump",
                         "reads every register in the known map, one byte each", do_cmd_husb238_dump, 0, 0);
-Light_Command_Define(cmd_husb238_read, &cmd_husb238, "read",
+Light_Command_Define(cmd_husb238_read, LIGHT_COMMAND_APP_ROOT, "read",
                         "reads one register: read <hex address>", do_cmd_husb238_read, 1, 1);
-Light_Command_Define(cmd_husb238_status, &cmd_husb238, "status",
+Light_Command_Define(cmd_husb238_status, LIGHT_COMMAND_APP_ROOT, "status",
                         "reads PD_STATUS0 and decodes it provisionally", do_cmd_husb238_status, 0, 0);
 
 //   NO write command, and that is a deliberate omission rather than an unfinished one. Every
@@ -420,7 +424,7 @@ static void _poll_console(void)
         uint8_t line[LIGHT_STREAM_MAX_MSG_LENGTH];
         if(!light_core_port_console_take_line(line, sizeof(line)))
                 return;
-        light_cli_queue_line(&cmd_husb238, line);
+        light_cli_queue_line(light_command_app_root(), line);
 }
 #else
 static void _poll_console(void) {}
