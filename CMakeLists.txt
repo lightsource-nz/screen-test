@@ -55,6 +55,16 @@ include(CTest)
 
 add_subdirectory(${LIGHT_PATH}/ light_framework)
 
+#   THIS APPLICATION'S VERSION, derived from its own git tags exactly as the framework's and the
+# library groups' are, and compiled in as SCREENTEST_VERSION_STRING -- so a firmware image can
+# say which commit produced it, which a hand-typed "0.1.0" never could.
+light_project_version(PREFIX SCREENTEST PATH "${CMAKE_CURRENT_LIST_DIR}")
+
+#   AND WHAT IT NEEDS OF ITS DEPENDENCIES. Each group below checks its own; these are the floors
+# SCREEN-TEST needs, which is a different question -- a group can satisfy its own requirements
+# and still be older than the version this application was written against.
+light_require_project_version(LIGHT 1.9.0)
+
 #   the display group -- core, six panel drivers and backlight. These were seven separate
 # repositories and seven submodule pointers here, kept in step by hand; they are now one
 # project, resolved by path rather than vendored. Nothing needs configuring for the normal
@@ -75,6 +85,7 @@ add_subdirectory(${LIGHT_PATH}/ light_framework)
 # reason would silently shadow the group, and the build would fail hunting for the six drivers
 # that had never been added.
 light_resolve_project(LIGHT_DISPLAY light_display MARKER module/light_display/CMakeLists.txt)
+light_require_project_version(LIGHT_DISPLAY 1.0.0)
 add_subdirectory(${LIGHT_DISPLAY_PATH} light_display_group)
 
 #   the UI group -- the widget toolkit, the input and sensor drivers, canvas, audio, and the
@@ -87,6 +98,7 @@ add_subdirectory(${LIGHT_DISPLAY_PATH} light_display_group)
 # module share the name light_ui, and module/light_ui is exactly what a checkout of the MODULE
 # would be called (this repository had one until the consolidation).
 light_resolve_project(LIGHT_UI light_ui MARKER module/light_ui/CMakeLists.txt)
+light_require_project_version(LIGHT_UI 1.0.0)
 add_subdirectory(${LIGHT_UI_PATH} light_ui_group)
 
 add_subdirectory(module/screentest_common)

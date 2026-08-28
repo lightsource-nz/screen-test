@@ -10,8 +10,9 @@
 
 #include <stdint.h>
 
-// TODO implement version fields properly
-#define ST_VERSION_STR                  "0.1.0"
+// the repository's version, derived from its git tags -- see light_project_version(SCREENTEST)
+#include <screentest_version.h>
+#define ST_VERSION_STR                  SCREENTEST_VERSION_STRING
 
 // ST_VERSION_STR, not CF_VERSION_STR -- the latter is crossfire's macro and is not defined
 // anywhere in this project. Copied across with the rest of this header, and it compiled only
